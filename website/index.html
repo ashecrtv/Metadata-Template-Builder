@@ -5,6 +5,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Metadata Template Builder</title>
+<script>
+// Demo copy (GitHub Pages, or any page opened with ?demo): real games and templates work; bookings and the job board use sample data.
+window.DEMO = /\.github\.io$/.test(location.hostname) || new URLSearchParams(location.search).has("demo");
+if (DEMO) addEventListener("DOMContentLoaded", () => document.body.insertAdjacentHTML("afterbegin",
+  `<div style="background:#123122;color:#fff;font:13px/1.4 system-ui,sans-serif;padding:8px max(16px,env(safe-area-inset-left,0px));text-align:center">Demo version: search real games and make real templates. Bookings and the job board use sample data. Made by <a href="https://ashergreenephoto.com" style="color:#fff">Asher Greene Photo</a>.</div>`));
+</script>
+
 <meta name="description" content="Captions, code replacements, keywords and Photo Mechanic metadata templates for games, events, portraits and commercial shoots.">
 <meta name="theme-color" content="#f6f5f0">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23121212'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Helvetica Neue,Helvetica,Arial,sans-serif' font-weight='700' font-size='42' fill='%23f6f5f0'%3EA%3C/text%3E%3C/svg%3E">
@@ -308,7 +315,18 @@ body.noscroll{overflow:hidden}
         <details open style="margin:0 0 14px"><summary><b>Fill from an email, text file, calendar invite, screenshot or flyer</b></summary>
           <p class="small muted" style="margin:6px 0">Paste the email or text, drop in a .txt / .eml / .ics file, or paste a screenshot (⌘V) / choose a flyer photo. The app looks for the event name, date, and location (venue, city, state).</p>
           <textarea id="cPaste" rows="6" placeholder="When: 3:00 PM - 6:00 PM October 24, 2026&#10;Subject: Spring Alumni Dinner&#10;Location: InterContinental Buckhead Atlanta"></textarea>
-          <div class="row" style="margin-top:6px"><button class="small" id="cParse">Read details</button><button class="small" id="cIcs">Load a file (.txt, .eml, .ics)</button><button class="small" id="cImg">Read a screenshot or photo</button><span class="small muted" id="cParseOut"></span></div>
+          <div class="row" style="margin-top:6px"><button class="small" id="cParse">Read details</button><button class="small" id="aiRead" hidden title="Uses your own Claude API key (about 1–2¢)">Read with Claude</button><button class="small" id="cIcs">Load a file (.txt, .eml, .ics)</button><button class="small" id="cImg">Read a screenshot or photo</button><span class="small muted" id="cParseOut"></span></div>
+        <details id="aiBox" style="margin:10px 0 0"><summary class="small"><b>Optional: connect your own Claude API key</b> <span class="muted">for messy emails, flyers and screenshots</span></summary>
+          <div class="small" style="margin:8px 0;max-width:68ch">
+            <p style="margin:0 0 6px">The free readers above handle most bookings. If you want Claude to read the hard ones, paste an <b>API key</b>: it's a prepaid account with Anthropic, separate from any Claude Pro or free plan (websites can't use those plans). Create one at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>, add credit (from $5), and paste the key here.</p>
+            <p style="margin:0 0 6px"><b>Cost:</b> you pay per use, nothing monthly. One email or flyer is roughly 2¢ with Opus 5.5, 1¢ with Sonnet 5.5, or a fraction of a cent with Haiku 5.5. $5 lasts hundreds of reads.</p>
+            <p style="margin:0">Your key is saved only in this browser and sent only to Anthropic. Claude's answers fill the fields for you to check; nothing is saved without you.</p>
+          </div>
+          <div class="row" style="gap:8px;flex-wrap:wrap"><input type="password" id="aiKey" placeholder="sk-ant-…" autocomplete="off" style="flex:1;min-width:200px">
+            <select id="aiModel"><option value="claude-opus-5-5">Opus 5.5 (most accurate)</option><option value="claude-sonnet-5-5">Sonnet 5.5 (balanced)</option><option value="claude-haiku-5-5">Haiku 5.5 (fastest, cheapest)</option></select>
+            <button class="small" id="aiSave" type="button">Save</button><button class="small" id="aiForget" type="button">Remove key</button></div>
+          <div class="small muted" id="aiOut" style="margin-top:6px"></div>
+        </details>
         </details>
         <div class="fields" style="grid-template-columns:repeat(4,minmax(0,1fr))">
           <label>Shoot type<select id="cType"><option value="game">Gameday</option><option value="portrait">Portrait</option><option value="commercial">Commercial</option><option value="event">Event</option><option value="practice">Practice</option></select></label>
@@ -2649,6 +2667,7 @@ loadAll().then(()=>{ const P = new URLSearchParams(location.search), q = P.get("
 async function saveToBoard(opts = {}){
   const out = $("#toBoardOut"), keyIn = $("#boardKeyIn");
   if (!S.sides[0] && !S.custom){ out.textContent = "Build the template first."; return; }
+  if (DEMO){ out.innerHTML = "In the demo, this would attach the template and file name to the job on the owner's private board. <a href=\"board.html\">See the sample board →</a>"; return "demo"; }
   let key = ""; try { key = localStorage.getItem("ashe.boardKey") || ""; } catch(e){}
   if (keyIn.value.trim()){ key = keyIn.value.trim(); try { localStorage.setItem("ashe.boardKey", key); } catch(e){} keyIn.value = ""; }
   if (!key){ keyIn.hidden = false; keyIn.focus(); out.textContent = "Enter your passcode once on this device."; return; }
@@ -2748,8 +2767,45 @@ async function findVenue(){
 document.addEventListener("click", e => { if (e.target.id === "venueFind") findVenue(); });
 listVenues();
 
+/* ---------- Optional: the user's own Claude API key (stored in this browser only, called straight from the browser) ---------- */
+const AI = { get key(){ try { return localStorage.getItem("ashe.aiKey") || ""; } catch(e){ return ""; } },
+  get model(){ try { return localStorage.getItem("ashe.aiModel") || "claude-opus-5-5"; } catch(e){ return "claude-opus-5-5"; } } };
+function showAI(){ const on = !!AI.key; $("#aiRead").hidden = !on; $("#aiModel").value = AI.model; $("#aiOut").textContent = on ? "Key saved in this browser. Use “Read with Claude” next to Read details." : ""; }
+document.addEventListener("click", e => {
+  if (e.target.id === "aiSave"){ const k = $("#aiKey").value.trim(); if (!/^sk-ant-/.test(k) && !AI.key){ $("#aiOut").textContent = "That doesn't look like an Anthropic API key (it starts with sk-ant-)."; return; }
+    try { if (k) localStorage.setItem("ashe.aiKey", k); localStorage.setItem("ashe.aiModel", $("#aiModel").value); } catch(err){} $("#aiKey").value = ""; showAI(); }
+  if (e.target.id === "aiForget"){ try { localStorage.removeItem("ashe.aiKey"); } catch(err){} showAI(); $("#aiOut").textContent = "Key removed from this browser."; }
+  if (e.target.id === "aiRead") aiRead();
+});
+async function aiRead(){
+  const text = emailText($("#cPaste").value).trim(), out = $("#cParseOut");
+  if (!text){ out.textContent = "Paste the email or text first."; return; }
+  out.textContent = "Claude is reading it…";
+  try {
+    const { default: Anthropic } = await import("https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.4.0/+esm");
+    const client = new Anthropic({ apiKey:AI.key, dangerouslyAllowBrowser:true });
+    const schema = { type:"object", additionalProperties:false, required:["kind","name","date","time","venue","city","state","home","away","subjects"],
+      properties:{ kind:{ type:"string", enum:["game","event","portrait","commercial","practice","unknown"] }, name:{ type:"string" }, date:{ type:"string", description:"YYYY-MM-DD or empty" },
+        time:{ type:"string" }, venue:{ type:"string" }, city:{ type:"string" }, state:{ type:"string", description:"full state name, or country outside the US" },
+        home:{ type:"string", description:"home team full name with mascot, for games" }, away:{ type:"string" }, subjects:{ type:"array", items:{ type:"string" } } } };
+    const res = await client.messages.create({ model:AI.model, max_tokens:2000,
+      system:"You read booking emails, flyers and schedules for a sports and event photographer. Pull out only what the text says; leave a field empty rather than guess. Use full official names.",
+      messages:[{ role:"user", content:`Today is ${new Date().toISOString().slice(0, 10)}. Extract the shoot details from this text:\n\n${text.slice(0, 30000)}` }],
+      output_config:{ format:{ type:"json_schema", schema } } });
+    if (res.stop_reason === "refusal"){ out.textContent = "Claude declined to read this text."; return; }
+    const d = JSON.parse(res.content.find(b => b.type === "text")?.text || "{}");
+    if (d.kind === "game" && (d.home || d.away)){ $("#cType").value = "game"; showCustomFields(); if (d.home) $("#cHome").value = d.home; if (d.away) $("#cAway").value = d.away; }
+    else if (["event","portrait","commercial","practice"].includes(d.kind)){ $("#cType").value = d.kind; showCustomFields(); }
+    applyParsed({ name:d.name, date:d.date, venue:d.venue, city:d.city, state:d.state });
+    if (d.subjects?.length){ const k = $("#kwExtra"); k.value = [k.value, ...d.subjects].filter(Boolean).join(", "); k.dispatchEvent(new Event("input", { bubbles:true })); }
+    out.textContent = "Claude: " + out.textContent + " Check every field before you start.";
+  } catch(e){ out.textContent = /401|authentication/i.test(e.message) ? "Claude didn't accept that key. Check it in Optional: connect your own Claude API key." : /credit|billing|402/i.test(e.message) ? "Your Anthropic account is out of credit." : "Couldn't reach Claude: " + e.message; }
+}
+showAI();
+
 // Short link from the booking email: index.html?ref=K7Q2M9. The details come from the job board.
 async function loadRef(ref){
+  if (DEMO){ $("#refNote").hidden = false; $("#findPanel").hidden = false; $("#refNote").textContent = "Short booking links open the owner's private job board, so they don't work in the demo."; return; }
   let key = ""; try { key = localStorage.getItem("ashe.boardKey") || ""; } catch(e){}
   const note = $("#refNote"); note.hidden = false; $("#findPanel").hidden = false;
   if (!key){ note.innerHTML = `This booking link needs your owner passcode once on this device. <form id="refKeyForm" style="display:inline-flex;gap:6px"><input type="password" id="refKey" placeholder="Owner passcode" autocomplete="current-password"><button class="primary small">Open booking</button></form>`; return; }

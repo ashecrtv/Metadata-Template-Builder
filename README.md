@@ -14,6 +14,11 @@ Also:
 - **Drafts:** new bookings arrive on the board with a draft template, ready for you to check.
 - **Smaller schools:** paste an official athletics roster page link (Sidearm, PrestoSports and similar), and the builder reads the roster.
 
+## Try it
+- **Public demo (free, GitHub Pages):** https://ashecrtv.github.io/Metadata-Template-Builder/. Search any real game and make real templates. The booking form and job board use sample data there.
+- **Smaller schools:** D2 and D3 football are in the search, and **Find roster page** reads a school's official roster site (Sidearm and PrestoSports layouts) on the Netlify version.
+- **Optional Claude API key:** paste your own key to have Claude read messy emails and flyers. It's prepaid credit from console.anthropic.com, about 1–2¢ a read, and the key is stored only in your browser.
+
 ## Run your own copy
 1. Fork this repo.
 2. In Netlify, choose Add new project → Import from Git, pick your fork and set the base directory to `website`.

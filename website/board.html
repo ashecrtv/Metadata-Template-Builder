@@ -6,6 +6,13 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="robots" content="noindex">
 <title>Job Board · ASHE</title>
+<script>
+// Demo copy (GitHub Pages, or any page opened with ?demo): real games and templates work; bookings and the job board use sample data.
+window.DEMO = /\.github\.io$/.test(location.hostname) || new URLSearchParams(location.search).has("demo");
+if (DEMO) addEventListener("DOMContentLoaded", () => document.body.insertAdjacentHTML("afterbegin",
+  `<div style="background:#123122;color:#fff;font:13px/1.4 system-ui,sans-serif;padding:8px max(16px,env(safe-area-inset-left,0px));text-align:center">Demo version: search real games and make real templates. Bookings and the job board use sample data. Made by <a href="https://ashergreenephoto.com" style="color:#fff">Asher Greene Photo</a>.</div>`));
+</script>
+
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23121212'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Helvetica Neue,Helvetica,Arial,sans-serif' font-weight='700' font-size='42' fill='%23f6f5f0'%3EA%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -189,6 +196,7 @@ const KEY = "ashe.jobs";
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch(e){ return []; } };
 let CLOUD = false, SEEN = [], pushT = 0;
 const save = () => {
+  if (window.DEMO) return;
   try { localStorage.setItem(KEY, JSON.stringify(JOBS)); } catch(e){ if (!CLOUD) alertNote("Couldn't save in this browser. Use Back up."); }
   if (CLOUD){ clearTimeout(pushT); pushT = setTimeout(() => fetch("/api/jobs", { method:"PUT", headers:{ "Content-Type":"application/json", "x-board-key":BKEY() }, body:JSON.stringify({ jobs:JOBS, seen:SEEN }) })
     .catch(() => alertNote("Couldn't reach the server. Changes are kept in this browser for now.")), 400); }
@@ -444,6 +452,11 @@ function jobFromBooking(b){
 }
 const BKEY = () => { try { return localStorage.getItem("ashe.boardKey") || ""; } catch(e){ return ""; } };
 async function sync(){
+  if (DEMO){ JOBS = [
+  { id:"demo1", status:"Confirmed", type:"game", name:"Liberty vs Dream", org:"Atlanta Dream", contact:"Sample Client", date:"2027-06-11", start:"19:30", venue:"Gateway Center Arena", city:"College Park", state:"Georgia", photographer:"Asher Greene", crew:"Madison Morris", coverage:"60 selects", deadline:"Same night", theme:"Pride Night", filename:"20270611_AtlantaDream_NYvsATL_AG_" },
+  { id:"demo2", status:"Requested", type:"event", name:"Spring Alumni Dinner", org:"Agnes Scott College", contact:"Sample Client", date:"2027-04-10", start:"18:00", venue:"Gaines Chapel", city:"Decatur", state:"Georgia", photographer:"Asher Greene", coverage:"Full event", deadline:"48 hours" },
+  { id:"demo3", status:"Delivered", type:"portrait", name:"Media Day", org:"Good Company Sports", contact:"Sample Client", date:"2026-03-22", venue:"Please Studio", city:"Brooklyn", state:"New York", photographer:"Asher Greene", gallery:"https://ashergreenephoto.com" }
+]; render(); $("#syncNote").textContent = "Demo board with sample jobs. Changes aren't saved."; return; }
   try {
     const r = await fetch("/api/jobs", { headers:{ "x-board-key":BKEY() } });
     if (r.status === 401){ $("#lockForm").hidden = false; $("#syncNote").textContent = "Locked. Enter your passcode to see your jobs."; return; }
