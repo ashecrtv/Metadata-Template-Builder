@@ -375,7 +375,10 @@ body.noscroll{overflow:hidden}
           <label>Your team is<select id="gMySide"><option value="auto">Auto (from client)</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral / not a team</option></select><span class="small muted" id="mySideOut"></span></label>
           <label>Caption wording<select id="gWording"><option value="auto">“against the …” when shooting for a team</option><option value="between">“between … and …” always</option></select></label>
         </div>
-        <div class="group-h">Your credit <span style="text-transform:none;letter-spacing:0;font-weight:500">(your name is remembered on this device)</span></div>
+        <div class="group-h">Your credit <span style="text-transform:none;letter-spacing:0;font-weight:500">(saved per profile on this device)</span></div>
+        <div class="row small" id="profileBar" style="gap:8px;flex-wrap:wrap;margin:0 0 10px"><span class="muted">Who's working?</span><select id="profileSel" aria-label="Profile"></select>
+          <button class="small" type="button" id="profileNew">+ New profile</button><button class="small" type="button" id="profileExport">Export settings</button><button class="small" type="button" id="profileImport">Import settings</button>
+          <input type="file" id="profileFile" accept=".json,application/json" hidden><span class="muted" id="profileOut"></span></div>
         <div class="fields" style="grid-template-columns:repeat(6,minmax(0,1fr))">
           <label>Photographer name<input type="text" id="gPhotog" placeholder="Full name, e.g. Jane Smith"></label>
           <label>Client / agency (after the /)<input type="text" id="gClient" placeholder="e.g. Getty Images (optional)"></label>
@@ -2817,6 +2820,51 @@ async function aiRead(){
   } catch(e){ out.textContent = /401|authentication/i.test(e.message) ? "Claude didn't accept that key. Check it in Optional: connect your own Claude API key." : /credit|billing|402/i.test(e.message) ? "Your Anthropic account is out of credit." : "Couldn't reach Claude: " + e.message; }
 }
 showAI();
+
+/* ---------- Profiles: each person keeps their own name, client, caption style, columns, team names and venues ----------
+   Stored on this device. Export a profile as a small file to move it to another device or hand it to a crew member. */
+const PROFILES = {
+  all(){ try { return JSON.parse(localStorage.getItem("rcb.profiles") || "{}"); } catch(e){ return {}; } },
+  cur(){ try { return localStorage.getItem("rcb.profile") || ""; } catch(e){ return ""; } },
+  pack(){ return { cfg:CFG, venues:venueMemory.get(), recent:recentTeams.get() }; },
+  save(name, data){ try { const a = this.all(); a[name] = data; localStorage.setItem("rcb.profiles", JSON.stringify(a)); localStorage.setItem("rcb.profile", name); } catch(e){} },
+  use(data){ try { localStorage.setItem("rcb.cfg", JSON.stringify({ ...data.cfg, client:"" })); localStorage.setItem("ashe.venues", JSON.stringify(data.venues || {})); localStorage.setItem("ashe.recentTeams", JSON.stringify(data.recent || [])); } catch(e){} }
+};
+function listProfiles(){
+  let cur = PROFILES.cur(), all = PROFILES.all();
+  if (!cur){ cur = (CFG.photographer || "").trim() || "Me"; PROFILES.save(cur, PROFILES.pack()); all = PROFILES.all(); }   // first visit: today's settings become the first profile
+  $("#profileSel").innerHTML = Object.keys(all).sort().map(n => `<option${n === cur ? " selected" : ""}>${esc(n)}</option>`).join("");
+}
+let switching = false;   // set while loading another profile, so the page closing doesn't copy these settings into it
+const keepProfile = () => { const cur = PROFILES.cur(); if (cur && !switching) PROFILES.save(cur, PROFILES.pack()); };
+addEventListener("pagehide", keepProfile); document.addEventListener("visibilitychange", () => { if (document.hidden) keepProfile(); });
+document.addEventListener("change", e => {
+  if (e.target.id === "profileSel"){ keepProfile(); const name = e.target.value, data = PROFILES.all()[name]; if (!data) return;
+    PROFILES.use(data); try { localStorage.setItem("rcb.profile", name); } catch(err){} switching = true; location.reload(); }
+  if (e.target.id === "profileFile"){ const f = e.target.files[0]; if (!f) return; f.text().then(t => {
+    try { const d = JSON.parse(t); if (d.app !== "metadata-template-builder" || !d.cfg) throw 0;
+      keepProfile(); let name = d.profile || "Imported"; const all = PROFILES.all(); while (all[name]) name += " (copy)";
+      const data = { cfg:{ ...DEFAULTS, ...d.cfg }, venues:d.venues || {}, recent:d.recent || [] };
+      PROFILES.save(name, data); PROFILES.use(data); switching = true; location.reload();
+    } catch(err){ $("#profileOut").textContent = "That file isn't a settings file from this builder."; } }); e.target.value = ""; }
+});
+document.addEventListener("click", e => {
+  if (e.target.id === "profileNew"){
+    const box = $("#profileOut"); box.innerHTML = `<form id="profileNewForm" style="display:inline-flex;gap:6px"><input id="profileName" placeholder="Name, e.g. Madison Morris" required><button class="primary small">Create</button></form>`; $("#profileName").focus(); }
+  if (e.target.id === "profileExport"){ keepProfile(); const name = PROFILES.cur() || "Me";
+    download(JSON.stringify({ app:"metadata-template-builder", v:1, profile:name, exported:new Date().toISOString(), ...PROFILES.pack() }, null, 2), `Metadata builder settings - ${name.replace(/[\/:]/g, "-")}.json`);
+    $("#profileOut").textContent = "Saved. Open this file with Import settings on another device."; }
+  if (e.target.id === "profileImport") $("#profileFile").click();
+});
+document.addEventListener("submit", e => {
+  if (e.target.id !== "profileNewForm") return; e.preventDefault();
+  const name = $("#profileName").value.trim(); if (!name) return;
+  if (PROFILES.all()[name]){ $("#profileOut").textContent = "That profile already exists. Pick it from the list."; return; }
+  keepProfile();
+  const fresh = { cfg:{ ...JSON.parse(JSON.stringify(DEFAULTS)), photographer:name, myCodes:{} }, venues:venueMemory.get(), recent:[] };   // new person: default settings with their name; shared venue list
+  PROFILES.save(name, fresh); PROFILES.use(fresh); switching = true; location.reload();
+});
+listProfiles();
 
 // Short link from the booking email: index.html?ref=K7Q2M9. The details come from the job board.
 async function loadRef(ref){
