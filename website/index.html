@@ -372,6 +372,8 @@ body.noscroll{overflow:hidden}
           <input type="hidden" id="gGameWord">
           <label>Arena abbreviation<input type="text" id="gArenaAbbr" placeholder="e.g. SFA"></label>
           <label>Season type<select id="gSeasonType"><option>Regular Season</option><option>Preseason</option><option>Playoffs</option></select></label>
+          <label>Your team is<select id="gMySide"><option value="auto">Auto (from client)</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral / not a team</option></select><span class="small muted" id="mySideOut"></span></label>
+          <label>Caption wording<select id="gWording"><option value="auto">“against the …” when shooting for a team</option><option value="between">“between … and …” always</option></select></label>
         </div>
         <div class="group-h">Your credit <span style="text-transform:none;letter-spacing:0;font-weight:500">(your name is remembered on this device)</span></div>
         <div class="fields" style="grid-template-columns:repeat(6,minmax(0,1fr))">
@@ -1100,7 +1102,7 @@ function fillGame(){
   $("#gEventCap").value = g.eventCap||"";
   $("#gGameWord").value = g.gameWord || defaultGameWord();
   $("#kwExtra").value = g.kwExtra || "";
-  $("#gArenaAbbr").value = g.arenaAbbr || ""; $("#gSeasonType").value = g.seasonType || "Regular Season";
+  $("#gArenaAbbr").value = g.arenaAbbr || ""; $("#gSeasonType").value = g.seasonType || "Regular Season"; $("#gMySide").value = g.mySide || "auto"; $("#gWording").value = g.wording || "auto";
   $("#gamePanel").classList.toggle("hidden", false);
 }
 const defaultGameWord = () => `the ${S.sides[0]?.L.soccer ? "match" : "game"}`;
@@ -1110,6 +1112,18 @@ function readGame(){
   g.home = +$("#gHome").value; g.event = $("#gEvent").value.trim(); g.eventCap = $("#gEventCap").value.trim();
   g.gameWord = $("#gGameWord").value.trim() || defaultGameWord();
   g.arenaAbbr = $("#gArenaAbbr").value.trim(); g.seasonType = $("#gSeasonType").value;
+  g.mySide = $("#gMySide").value; g.wording = $("#gWording").value;
+}
+// Shooting for one team: "home", "away", or "" (neutral). Auto matches the client to a team ("Atlanta Falcons", "Falcons", "ATL").
+document.addEventListener("change", e => { if (e.target.id === "gMySide" || e.target.id === "gWording"){ readGame(); renderAll(); } });
+function mySide(){
+  const g = S.game, [a, b] = S.sides; if (!a || !b) return "";
+  const homeSide = S.sides[g.home] || b, awaySide = S.sides[1 - g.home] || a;
+  if (g.mySide === "home" || g.mySide === "away") return g.mySide;
+  if (g.mySide === "neutral") return "";
+  const c = norm(CFG.client || ""); if (!c) return "";
+  const is = s => s && [s.teamName, s.team.nick, s.team.abbr, s.team.name].filter(Boolean).some(n => { const k = norm(n); return k.length > 1 && (c === k || (" " + c + " ").includes(" " + k + " ") || (k.length > 4 && c.includes(k))); });
+  return is(homeSide) && !is(awaySide) ? "home" : is(awaySide) && !is(homeSide) ? "away" : "";
 }
 // Turns ESPN's game note into three pieces, written the way Getty does:
 //   head: for the headline        "2026 WNBA Finals Game 6"     "2025 SEC Championship"   "Doubleheader Game 2"
@@ -1489,7 +1503,8 @@ function facts(side){
   const g = S.game, dp = dateParts(), [a,b] = S.sides, L = (side || a)?.L || { k:"event/custom", n:"", soccer:false };   // custom shoots have no teams
   const home = b ? (S.sides[g.home] || b) : a, away = b ? (S.sides[1-g.home] || a) : null;
   const other = side ? S.sides.find(s => s && s !== side) : null;
-  const vs = side ? (other ? ` against ${theTeam(other)}` : "") : (away ? ` between ${theTeam(away)} and ${theTeam(home)}` : "");
+  const mine = !side && away && g.wording !== "between" ? mySide() : "", opp = mine === "home" ? away : mine === "away" ? home : null;
+  const vs = side ? (other ? ` against ${theTeam(other)}` : "") : opp ? ` against ${theTeam(opp)}` : (away ? ` between ${theTeam(away)} and ${theTeam(home)}` : "");
   const country = countryOf(g.state), us = country === "United States";
   const st = stateAbbr(g.state);
   const special = (g.gameWord || defaultGameWord()) !== defaultGameWord();
@@ -2163,7 +2178,7 @@ function keywordList(){
   const evm = ev.match(/^(.*?)\s*Game\s+(\d+)$/i), evParts = evm ? [evm[1], `Game ${evm[2]}`] : [ev];
   const country = countryOf(g.state);
   return [...new Set([ year, season && `${season} Season`, ...team(home), g.city, ...team(away), lgTri, lgName, g.seasonType || "Regular Season", g.venue, g.arenaAbbr,
-    sport, women, ...evParts, "Gameday", g.state, country === "United States" ? "USA" : country,
+    sport, women, ...evParts, "Gameday", ...({ home:["Home", "Home Game"], away:["Away", "Away Game"] }[mySide()] || []), g.state, country === "United States" ? "USA" : country,
     ...extraKw(), (CFG.client||"").trim(), (CFG.photographer||"").trim() ]                // for your archive: every job by client, and by shooter
     .map(k => titleCase(String(k||"").trim())).filter(Boolean))];
 }
