@@ -25,3 +25,6 @@ Also:
 No keys or client data live in this repo. Bookings and jobs stay in your own Netlify account.
 
 Made by [Asher Greene Photo](https://ashergreenephoto.com).
+
+## License
+Code: [MIT](LICENSE). The photos in `website/photos/` are © Asher Greene and are not covered by the license; please don't reuse them.

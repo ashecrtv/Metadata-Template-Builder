@@ -3,6 +3,7 @@
 !/.gitignore
 !/README.md
 !/CODE_OF_CONDUCT.md
+!/LICENSE
 !/website/
 !/board-site/
 .DS_Store
