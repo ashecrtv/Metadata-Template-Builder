@@ -343,7 +343,7 @@ body.noscroll{overflow:hidden}
         <div class="group-h">Where &amp; when</div>
         <div class="fields" style="grid-template-columns:repeat(6,minmax(0,1fr))">
           <label>Date<input type="date" id="gDate"></label>
-          <label style="grid-column:span 2">Venue<input type="text" id="gVenue"></label>
+          <label style="grid-column:span 2">Venue <button class="link small" type="button" id="venueFind" title="Look up the city and state (Wikidata, free)">Find city &amp; state</button><input type="text" id="gVenue" list="venueList"><span class="small muted" id="venueOut"></span></label><datalist id="venueList"></datalist>
           <label>City<input type="text" id="gCity"></label>
           <label>State / country<input type="text" id="gState"></label>
           <label>Home team<select id="gHome"><option value="1">Team 2</option><option value="0">Team 1</option></select></label>
@@ -606,6 +606,13 @@ async function loadLeague(L){
   walk(d);
   S.loaded.add(L.k);
 }
+// D2 / D3 football: ESPN's search skips these schools, but its standings feed lists them (and allows browser access).
+async function loadLowerDivisions(){
+  const L = LEAGUES.find(l => l.k === "football/college-football"); if (!L || S.loaded.has("lower")) return;
+  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === "object"){ if (x.team?.id && x.team.displayName) addTeam(x.team, L); Object.values(x).forEach(walk); } };
+  await Promise.allSettled(["35", "36"].map(g => getJSON(`https://site.api.espn.com/apis/v2/sports/football/college-football/standings?group=${g}`).then(walk)));
+  S.loaded.add("lower");
+}
 // College (hundreds of schools): ask ESPN's search for each side of the query.
 async function searchCollege(side){
   const d = await getJSON(`https://site.web.api.espn.com/apis/common/v3/search?query=${encodeURIComponent(side)}&limit=40&type=team`);
@@ -633,8 +640,27 @@ function scoreTeam(t, q){
   if ((" "+n+" ").includes(" "+q+" ")) return 55;
   const qt = q.split(" "), nt = new Set(n.split(" "));
   const hit = qt.filter(w => nt.has(w)).length;
-  return hit ? Math.round(40*hit/qt.length) : 0;
+  // Typos: "ferriss state", "kutztwon". Close enough to the full name, school or nickname counts, and beats a single shared word like "state".
+  const near = Math.max(similar(q, n), similar(q, loc), similar(q, nick), similar(q, sh));
+  const typo = near >= 0.75 ? Math.round(60 * near) : 0;
+  return Math.max(hit ? Math.round(40*hit/qt.length) : 0, typo);
 }
+// Letter-pair overlap (0..1): forgiving of one or two wrong, missing or swapped letters.
+function similar(a, b){   // 1 = same; one wrong, missing, extra or swapped letter in an 8-letter word is about 0.88
+  if (!a || !b) return 0; if (a === b) return 1;
+  const m = a.length, n = b.length, d = Array.from({ length:m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++){
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    if (i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) d[i][j] = Math.min(d[i][j], d[i-2][j-2] + 1);   // swapped letters
+  }
+  return 1 - d[m][n] / Math.max(m, n);
+}
+// Everyday nicknames people type instead of the school name. Add your own in this list.
+const TEAM_ALIASES = { "dawgs":"georgia bulldogs", "uga":"georgia bulldogs", "bama":"alabama crimson tide", "noles":"florida state seminoles", "canes":"miami hurricanes",
+  "jackets":"georgia tech yellow jackets", "gt":"georgia tech yellow jackets", "vols":"tennessee volunteers", "gators":"florida gators", "hoos":"virginia cavaliers",
+  "zags":"gonzaga bulldogs", "heels":"north carolina tar heels", "unc":"north carolina tar heels", "lsu":"lsu tigers", "ole miss":"ole miss rebels", "pitt":"pittsburgh panthers",
+  "niners":"san francisco 49ers", "bucs":"tampa bay buccaneers", "pats":"new england patriots", "g men":"new york giants", "sixers":"philadelphia 76ers", "cavs":"cleveland cavaliers", "mavs":"dallas mavericks", "wolves":"minnesota timberwolves" };
 // Pulls a year, playoff round and game number out of the search ("dream vs fever round 1 game 3 2025"),
 // so the game list can be narrowed and the game picked for you. Returns the query with those words removed.
 function parseQueryExtras(q){
@@ -652,9 +678,15 @@ function parseQueryExtras(q){
   return { Q, clean };
 }
 function splitQuery(q){
-  const parts = q.split(/\s+(?:vs\.?|v\.?|versus|at|@)\s+|\s+[-–—]\s+|\s*@\s*/i).map(s=>norm(s)).filter(Boolean);
+  const parts = q.split(/\s+(?:vs\.?|v\.?|versus|at|@)\s+|\s+[-–—]\s+|\s*@\s*/i).map(s=>norm(s)).filter(Boolean).map(p => norm(TEAM_ALIASES[p] || p));
   return parts.slice(0,2);
 }
+// Teams you've confirmed before are remembered on this device and searched first.
+const recentTeams = { get(){ try { return JSON.parse(localStorage.getItem("ashe.recentTeams") || "[]"); } catch(e){ return []; } },
+  add(sides){ try { const have = this.get().filter(r => !sides.some(s => s && String(s.team.id) === r.id && s.L.k === r.lk));
+    const add = sides.filter(Boolean).map(s => ({ id:String(s.team.id), lk:s.L.k, abbreviation:s.team.abbr || s.team.abbreviation || "", displayName:s.team.name || s.team.displayName || s.teamName, shortDisplayName:s.team.short || "", location:s.team.loc || "", name:s.team.nick || "" }));
+    localStorage.setItem("ashe.recentTeams", JSON.stringify([...add, ...have].slice(0, 60))); } catch(e){} } };
+function addRecentTeams(){ for (const r of recentTeams.get()){ const L = LEAGUES.find(l => l.k === r.lk); if (L) addTeam(r, L); } }
 async function search(){
   const raw = $("#q").value.trim(); if (!raw) return;
   let { Q, clean: q } = parseQueryExtras(raw);
@@ -666,13 +698,15 @@ async function search(){
   const sides = splitQuery(q);
   const only = $("#leagueSel").value;
   $("#searchStatus").textContent = "Searching…";
-  await Promise.allSettled(sides.map(searchCollege));
+  addRecentTeams();
+  await Promise.allSettled([...sides.map(searchCollege), (!sport || sport === "football/") ? loadLowerDivisions() : null]);
   const pairs = [];
   for (const L of LEAGUES){
     if (only && L.k !== only) continue;
     if (!only && sport && !L.k.startsWith(sport)) continue;
     const ts = S.teams.filter(t=>t.league===L);
-    const best = side => ts.map(t=>({t,s:scoreTeam(t,side)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+    const mine = new Set(recentTeams.get().map(r => r.lk + r.id));
+    const best = side => ts.map(t=>({t,s:scoreTeam(t,side) + (mine.has(L.k + t.id) ? 8 : 0)})).filter(x=>x.s>8 || (x.s>0 && !mine.has(L.k + x.t.id))).sort((a,b)=>b.s-a.s);
     const a = best(sides[0]), b = sides[1] ? best(sides[1]) : [];
     if (!a.length || (sides[1] && !b.length)) continue;
     const A = a[0], B = b.find(x=>x.t!==A.t);
@@ -930,7 +964,7 @@ document.addEventListener("change", e => {
 document.addEventListener("input", e => { if (e.target.id === "batchLead") S.batchLead = e.target.value; });
 document.addEventListener("click", e => {
   const t = e.target;
-  if (t.id === "gameConfirm"){ S.gameConfirmed = true; renderGames(); return; }
+  if (t.id === "gameConfirm"){ S.gameConfirmed = true; recentTeams.add(S.sides); venueMemory.put(S.game.venue, S.game.city, S.game.state); renderGames(); return; }
   if (t.id === "gameChange"){ S.gameConfirmed = false; renderGames(); return; }
   if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => t.dataset.bsel === "all" || compId(evInfo(S.games[i]).home) === String(a.team.id))); renderGames(); return; }
   if (t.id === "batchGo") exportBatch();
@@ -1311,6 +1345,16 @@ function parseCSV(text){
   }
   return out.length ? out : null;
 }
+// Roster pages read by the helper come back one player per line, cells split by tabs: "0	Jake Price	RB	So.	5-8 …".
+function parseTabTable(text){
+  const rows = text.split(/\r?\n/).map(l => l.split("\t").map((c, k) => k === 1 ? c.replace(/,\s*(jr|sr|ii|iii|iv)\.?$/i, " $1.").trim() : c.trim())).filter(r => r.length >= 3 && /^#?\d{1,3}$/.test(r[0]) && /^[A-Za-z][\w.'’-]*(\s+[A-Za-z][\w.'’-]*)+$/.test(r[1] || ""));
+  if (rows.length < 5) return null;
+  return rows.map(r => {
+    const num = r[0].replace(/^#/, ""), name = r[1].split(/\s+/).map(properCase).join(" "), [first, ...rest] = name.split(" ");
+    const pa = /^[A-Z]{1,4}(\/[A-Z]{1,4})?$/.test(r[2] || "") ? r[2] : "";
+    return { include:true, num, first, last:rest.join(" "), name, posFull:POSNAME[pa] || pa || "", posAbbr:pa, status:"", group:"", note:"" };
+  });
+}
 // Find the roster table inside a long document (game notes, media guide): a header like "NO. PLAYER POS."
 // or a short "... Roster" title, followed by player rows. Returns the players from the best block, or null.
 function rosterSection(text, side, other){
@@ -1350,7 +1394,9 @@ function applyPR(i){
   const text = side.prText || "";
   // Order: 1) the document's own roster table, 2) the whole document checked against ESPN, 3) leftovers unticked.
   side.prFrom = "";
-  let pr = parseCodeFile(text, side) || (/\.csv$/i.test(side.prFile||"") || /^[^\n]*,[^\n]*,/.test(text) ? parseCSV(text) : null);
+  const table = parseTabTable(text);   // an official roster page: every row is this team
+  if (table) side.prFrom = "site";
+  let pr = parseCodeFile(text, side) || table || (/\.csv$/i.test(side.prFile||"") || /^[^\n]*,[^\n]*,/.test(text) ? parseCSV(text) : null);
   if (!pr){
     const sec = rosterSection(text, side, other);
     if (sec){ pr = sec; side.prFrom = "section"; }
@@ -1362,7 +1408,7 @@ function applyPR(i){
   compare(side, other);
   // Game notes and media guides mention players from other teams (records, opponents, league leaders).
   // When most names aren't on the ESPN roster, leave those unticked so only this team goes in the file.
-  if (side.espn?.players?.length){
+  if (side.espn?.players?.length && side.prFrom !== "site"){
     const off = side.pr.filter(p => p.flag === "warn" && /Not on ESPN/.test(p.note)), on = side.pr.filter(p => p.flag === "ok" || /ESPN has/.test(p.note));
     if (off.length > 4 && on.length >= 5) off.forEach(p => { p.include = false; p.note = "Not on ESPN roster (unticked)"; });
   }
@@ -2380,7 +2426,7 @@ function teamPanel(s, i){
     <div class="small muted">${fetched}</div>
     ${official}
     <div class="drop ${s.source==="pr"&&s.pr?"hidden":""}" data-drop="${i}">Drop the PR team's roster here (PDF, Word .docx, CSV, an old Photo Mechanic code file .txt, or a screenshot or photo) or click to choose a file. You can also paste a screenshot with ⌘V.</div>
-    <div class="row" style="margin:6px 0 4px"><input type="url" data-rurl="${i}" placeholder="Or paste a roster page link (team site, MaxPreps…)" style="flex:1;min-width:0"><button class="small" data-rfetch="${i}">Get roster</button></div>
+    <div class="row" style="margin:6px 0 4px"><input type="url" data-rurl="${i}" placeholder="Or paste a roster page link (team site, MaxPreps…)" style="flex:1;min-width:0"><button class="small" data-rfetch="${i}">Get roster</button><button class="small" data-rfind="${i}" title="Find the school's official roster page (Wikidata + the athletics site)">Find roster page</button></div>
     <div id="prStatus${i}" class="status">${s.source==="pr" && s.pr ? prSummary(s) : ""}</div>
     ${s.source==="pr" ? `<details ${s.pr?"":"open"} style="margin-bottom:8px"><summary>${s.pr?"Check the text read from the document, or fix it":"Or paste roster text"}</summary>
       <textarea rows="8" data-prtext="${i}" placeholder="10 Rhyne Howard G&#10;3 Jordin Canada G&#10;…">${esc(s.prText||"")}</textarea>
@@ -2397,7 +2443,7 @@ function teamPanel(s, i){
 }
 function prSummary(s){
   const n = s.pr.length, ok = s.pr.filter(p=>p.flag==="ok").length, diff = s.pr.filter(p=>p.note.startsWith("ESPN")).length, neu = s.pr.filter(p=>p.note==="Not on ESPN roster").length, oth = s.pr.filter(p=>p.flag==="bad").length, unt = s.pr.filter(p=>/unticked/.test(p.note)).length;
-  return `Read ${n} players from the ${s.prFrom === "section" ? "document's roster table" : "PR roster"}: ${ok} match ESPN, ${diff} with a different number, ${neu} not on ESPN${oth?`, ${oth} skipped (other team)`:""}${unt?`, ${unt} other names left unticked (other teams mentioned in the document)`:""}. The PR roster is used for the file.`;
+  return `Read ${n} players from the ${s.prFrom === "section" ? "document's roster table" : s.prFrom === "site" ? "official roster page" : "PR roster"}: ${ok} match ESPN, ${diff} with a different number, ${neu} not on ESPN${oth?`, ${oth} skipped (other team)`:""}${unt?`, ${unt} other names left unticked (other teams mentioned in the document)`:""}. The PR roster is used for the file.`;
 }
 
 /* ---------- events ---------- */
@@ -2507,6 +2553,35 @@ async function fetchRosterPage(i){
   } catch(e){ st.textContent = e.message; }
 }
 
+// Find a school's official roster page: Wikidata gives the athletics website, the site's own links give the roster.
+// Works with Sidearm (/sports/womens-basketball/roster) and PrestoSports (/sports/wbkb/2026-27/roster) sites.
+const SPORT_SLUGS = { "football":["football","fball"], "basketball/m":["mens-basketball","mbkb"], "basketball/w":["womens-basketball","wbkb"], "baseball":["baseball","bsb"], "softball":["softball","sball"],
+  "soccer/m":["mens-soccer","msoc"], "soccer/w":["womens-soccer","wsoc"], "volleyball":["womens-volleyball","wvball","volleyball"], "lacrosse/m":["mens-lacrosse","mlax"], "lacrosse/w":["womens-lacrosse","wlax"], "hockey/m":["mens-ice-hockey","mice"], "hockey/w":["womens-ice-hockey","wice"] };
+async function findRosterPage(i){
+  const side = S.sides[i], st = document.querySelector(`#prStatus${i}`); if (!side) return;
+  const sp = sportOf(side.L), women = /women|wnba|nwsl/.test(side.L.k), slugs = SPORT_SLUGS[sp] || SPORT_SLUGS[sp + (women ? "/w" : "/m")] || [];
+  st.textContent = "Looking for the official athletics site…";
+  try {
+    const api = q => fetch("https://www.wikidata.org/w/api.php?" + new URLSearchParams({ ...q, format:"json", origin:"*" })).then(r => r.json());
+    const hits = (await api({ action:"wbsearchentities", search:side.teamName, language:"en", type:"item", limit:"6" })).search || [];
+    if (!hits.length) throw new Error("No athletics site found. Paste the roster link instead.");
+    const ents = (await api({ action:"wbgetentities", ids:hits.map(h => h.id).join("|"), props:"claims" })).entities || {};
+    const site = hits.map(h => ({ h, url:ents[h.id]?.claims?.P856?.[0]?.mainsnak?.datavalue?.value })).filter(x => x.url)
+      .sort((a, b) => /intercollegiate|athletic|sports teams/i.test(b.h.description || "") - /intercollegiate|athletic|sports teams/i.test(a.h.description || ""))[0];
+    if (!site) throw new Error("No athletics site found. Paste the roster link instead.");
+    const home = new URL(site.url).origin + "/";
+    st.textContent = `Reading ${new URL(home).hostname}…`;
+    const r = await fetch("/.netlify/functions/roster-page?links=1&url=" + encodeURIComponent(home));
+    if (r.status === 404 || !(r.headers.get("content-type") || "").includes("json")) throw new Error(`Found ${new URL(home).hostname}. Roster lookups work on the live site; here, open it and paste the roster link.`);
+    const links = (await r.json()).links || [];
+    const pick = links.filter(u => slugs.some(sl => new RegExp(`/sports/${sl}/`, "i").test(u))).sort((a, b) => b.localeCompare(a))[0];   // newest season first
+    if (!pick) throw new Error(`Found ${new URL(home).hostname}, but no ${slugs[0] || "matching"} roster link. Paste it instead.`);
+    document.querySelector(`[data-rurl="${i}"]`).value = pick;
+    return fetchRosterPage(i);
+  } catch(e){ st.textContent = e.message; }
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-rfind]"); if (b) findRosterPage(+b.dataset.rfind); });
+
 // Emails: .eml files (and raw source copied from Gmail's "Show original") come MIME-encoded.
 // Pull out the plain-text part and decode it so the readers below see normal text.
 function emailText(raw){
@@ -2597,6 +2672,7 @@ async function saveToBoard(opts = {}){
         dayof:[bk.dayof_name, bk.dayof_phone].filter(Boolean).join(" · ") }); seen.push(bk.sub); }
       jobs.push(j);
     }
+    readGame(); venueMemory.put(S.game.venue, S.game.city, S.game.state);
     j.xmp = { name:xmpFileName(), text:xmpText() };
     j.draft = !!opts.draft;   // drafts are marked "Draft, check" until you save from the builder yourself
     j.filename = $("#ingestOut").value.trim() || ingestName();
@@ -2630,6 +2706,47 @@ document.addEventListener("click", e => {
   }
   if (e.target.id === "startOver"){ location.href = location.pathname; }
 });
+
+/* ---------- Venues: remembered on this device, aliases, and a free Wikidata lookup ---------- */
+const venueMemory = { get(){ try { return JSON.parse(localStorage.getItem("ashe.venues") || "{}"); } catch(e){ return {}; } },
+  put(name, city, state){ if (!name || !city) return; try { const v = this.get(); v[name] = { city, state:state || "" }; localStorage.setItem("ashe.venues", JSON.stringify(v)); } catch(e){} listVenues(); } };
+function listVenues(){ const el = $("#venueList"); if (el) el.innerHTML = Object.keys(venueMemory.get()).sort().map(n => `<option value="${esc(n)}">`).join(""); }
+// Typing a remembered venue (or an ESPN short name) fills the full name, city and state.
+document.addEventListener("change", e => {
+  if (e.target.id !== "gVenue") return;
+  const raw = e.target.value.trim(), full = VENUE_ALIAS[raw] || raw, known = venueMemory.get()[full];
+  if (full !== raw){ e.target.value = full; e.target.dispatchEvent(new Event("input", { bubbles:true })); }
+  if (known){ const put = (id, v) => { const el = $("#" + id); if (!el.value.trim()){ el.value = v; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
+    put("gCity", known.city); put("gState", known.state); $("#venueOut").textContent = " Filled from your saved venues."; }
+});
+async function findVenue(){
+  const name = $("#gVenue").value.trim(), out = $("#venueOut"); if (!name){ out.textContent = " Type the venue first."; return; }
+  out.textContent = " Looking up…";
+  const api = q => fetch("https://www.wikidata.org/w/api.php?" + new URLSearchParams({ ...q, format:"json", origin:"*" })).then(r => r.json());
+  const label = async id => { const d = await api({ action:"wbgetentities", ids:id, props:"labels|claims", languages:"en" }); return d.entities?.[id]; };
+  try {
+    const hits = (await api({ action:"wbsearchentities", search:name, language:"en", type:"item", limit:"7" })).search || [];
+    const PLACE = /arena|stadium|field|park|center|centre|coliseum|gym|hall|theat|venue|ballpark|complex|dome|pavilion|court|rink|club|hotel|church|chapel|museum|farm|studio|auditorium|amphitheat/i;
+    const hit = hits.find(h => PLACE.test(h.description || "")) || hits[0];
+    if (!hit){ out.textContent = " Not found on Wikidata. Type the city and state."; return; }
+    const v = await label(hit.id), inId = v?.claims?.P131?.[0]?.mainsnak?.datavalue?.value?.id;
+    if (!inId){ out.textContent = ` Found “${hit.label}”, but no city is listed. Type it in.`; return; }
+    const place = await label(inId), stId = place?.claims?.P131?.[0]?.mainsnak?.datavalue?.value?.id;
+    let city = place?.labels?.en?.value || "", state = stId ? (await label(stId))?.labels?.en?.value || "" : "";
+    if (/county/i.test(state)){ const c = await label(stId), up = c?.claims?.P131?.[0]?.mainsnak?.datavalue?.value?.id; if (up) state = (await label(up))?.labels?.en?.value || state; }   // city → county → state
+    // Some venues are filed under the state, not the city ("Forbes Arena" → Georgia): read "in Atlanta, Georgia" from its description instead.
+    const isState = t => Object.values(STATES).includes(t) || /^united states/i.test(t);
+    if (isState(city) || /^united states/i.test(state)){
+      const m = (hit.description || "").match(/\bin ([A-Z][\w.' -]+?),\s*([A-Z][\w.' ]+?)(?:,|\.|$| US| USA)/);
+      if (m){ city = m[1].trim(); state = STATES[m[2].trim()] || m[2].trim(); } else { state = isState(city) ? city : state; city = ""; }
+    }
+    const put = (id, val) => { const el = $("#" + id); if (val && !el.value.trim()){ el.value = val; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
+    put("gCity", city); put("gState", state);
+    out.textContent = ` Found: ${hit.label}${hit.description ? " (" + hit.description + ")" : ""} · ${[city, state].filter(Boolean).join(", ")}. Check it.`;
+  } catch(e){ out.textContent = " Couldn't reach Wikidata. Type the city and state."; }
+}
+document.addEventListener("click", e => { if (e.target.id === "venueFind") findVenue(); });
+listVenues();
 
 // Short link from the booking email: index.html?ref=K7Q2M9. The details come from the job board.
 async function loadRef(ref){
