@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Learn Photo Metadata · ASHE</title>
+<meta name="description" content="Why photo metadata matters, a before-and-after search demo, and a plain-English guide to Photo Mechanic templates, code replacements and ingest names.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F5F0;--panel:#fff;--ink:#121212;--muted:#5f5f5a;--line:#dcdad2;--soft:#eeece4;--accent:#123122;--accent-ink:#fff;--hit:#fff4c2;--sans:"Inter Tight",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,Menlo,monospace;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:40px}
+.logo{font-weight:800;letter-spacing:.02em;font-size:18px;color:var(--ink);text-decoration:none}.logo sup{font-size:9px}
+.tabs{display:inline-flex;gap:2px;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:3px;flex-wrap:wrap}
+.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}
+.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+h1{font-size:clamp(34px,6vw,58px);line-height:1;letter-spacing:-.02em;text-transform:uppercase;margin:0 0 14px;text-wrap:balance}
+h2{font-size:26px;letter-spacing:-.01em;margin:56px 0 10px;text-wrap:balance}
+h3{font-size:17px;margin:22px 0 6px}
+p,li{max-width:68ch}
+.lede{font-size:19px;color:var(--muted);max-width:60ch}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:6px 0 14px}
+.seg button{font:inherit;font-size:14px;font-weight:600;padding:8px 16px;border:0;background:var(--panel);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.search{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.search input{flex:1;min-width:200px;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chips button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--soft);border-radius:99px;padding:4px 10px;cursor:pointer}
+.count{font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);min-width:0;transition:opacity .2s}
+.card.miss{opacity:.28}
+.card .ph{aspect-ratio:3/2;background:var(--soft);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.card .ph img{width:100%;height:100%;object-fit:cover}
+.card .meta{padding:10px 12px;font-size:13px}
+.card .fn{font-family:var(--mono);font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .cap{margin:6px 0 0;line-height:1.4}
+.card .kw{margin-top:6px;color:var(--muted);font-size:12px}
+.card .none{color:var(--muted);font-style:italic}
+mark{background:var(--hit);color:inherit;border-radius:3px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.cols .panel h3{margin-top:0}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--panel)}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+code{font-family:var(--mono);font-size:.9em;background:var(--soft);padding:1px 5px;border-radius:5px}
+ol.steps{padding-left:20px}ol.steps li{margin:6px 0}
+.cta{display:inline-block;margin-top:10px;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:600}
+a{color:var(--accent)}
+footer{margin-top:64px;color:var(--muted);font-size:13px}
+@media (max-width:640px){header .ext{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a>
+    <nav class="tabs" aria-label="Pages"><a href="booking.html">Booking</a><a href="index.html">Builder</a><a href="board.html">Job board</a><a href="learn.html" aria-current="page">Learn</a></nav>
+  </header>
+
+  <p class="kicker">Photo metadata, explained</p>
+  <h1>A photo nobody can find doesn't exist</h1>
+  <p class="lede">Metadata is the text that travels inside every image file: who's in it, where and when it was taken, who shot it and who owns it. With it, a picture can be found, credited and published in seconds. Without it, it's a file name like <code>DSC_4821.JPG</code>.</p>
+
+  <h2>Try it: search the same six photos</h2>
+  <p>Same pictures, same search. Switch between the files straight off the camera and the files after this tool's template and ingest name are applied.</p>
+  <div class="panel">
+    <div class="seg" role="group" aria-label="Show files"><button type="button" data-mode="before" aria-pressed="false">Before: straight off the camera</button><button type="button" data-mode="after" aria-pressed="true">After: with metadata</button></div>
+    <div class="search"><input id="q" type="search" placeholder="Search: a name, team, place, year…" value="Tracy" aria-label="Search the photos"><span><span class="count" id="count">0</span> found</span></div>
+    <div class="chips" style="margin-bottom:14px"><span class="kicker" style="align-self:center">Try</span>
+      <button type="button">Tracy</button><button type="button">Giants</button><button type="button">Atlanta</button><button type="button">Commencement</button><button type="button">2024</button><button type="button">Portrait</button></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <h2>Why it matters, even if you never touch a camera</h2>
+  <div class="cols">
+    <div class="panel"><h3>Found in seconds</h3><p>A social team searching "Tracy touchdown" gets the frame now, not after scrolling 2,000 thumbnails. Every search hit is a post that goes out on time.</p></div>
+    <div class="panel"><h3>Credit and rights travel with the file</h3><p>The photographer, the client and the copyright stay attached when the file is emailed, uploaded or reposted. Fewer uncredited images, clearer licensing.</p></div>
+    <div class="panel"><h3>Archives that pay off later</h3><p>A tagged season is a searchable record: every rookie's first game, every honoree on Salute to Service night. Untagged, it's a hard drive nobody opens.</p></div>
+    <div class="panel"><h3>Consistency at scale</h3><p>One template means every photographer on a crew captions the same way: same spelling of names, same event title, same keywords. That's what makes a library searchable across years.</p></div>
+  </div>
+
+  <h2>How this site works</h2>
+  <ol class="steps">
+    <li><b>Booking.</b> A client fills out the booking form. You get an email with a link that holds every detail.</li>
+    <li><b>Builder.</b> The link opens the builder already filled in. For games it pulls both teams and rosters from ESPN. You check the caption and confirm.</li>
+    <li><b>Template + file name.</b> The builder makes a Photo Mechanic metadata template (.XMP), a code replacement file and an ingest file name. Tick several games to make a whole season at once.</li>
+    <li><b>Job board.</b> The template and file name are saved on the job, so on shoot day everything is in one place.</li>
+  </ol>
+  <a class="cta" href="index.html">Open the builder</a>
+
+  <h2>Photo Mechanic, step by step</h2>
+  <p>Photo Mechanic by Camera Bits is the ingest and captioning tool most sports and news photographers use. Full documentation: <a href="https://docs.camerabits.com/" target="_blank" rel="noopener">docs.camerabits.com</a>.</p>
+  <div class="cols">
+    <div class="panel"><h3>1. Load the metadata template</h3><p>Image ▸ Metadata Template… ▸ Load, and pick the .XMP from the builder. Then, in the Ingest window, tick <b>Apply IPTC/XMP template</b> so every photo gets it as it comes off the card.</p></div>
+    <div class="panel"><h3>2. Rename on ingest</h3><p>In the Ingest window, tick <b>Rename photos as</b> and paste the builder's file name, for example <code>20260611_WSLAM_NYvsATL_AG_</code>. Turn on <b>Sequence</b>; the name ends in "_" so Photo Mechanic adds the number.</p></div>
+    <div class="panel"><h3>3. Load the code replacements</h3><p>Image ▸ Code Replacements… ▸ load the .txt. Then typing <code>/a10/</code> in a caption becomes the player's full name, number and team. Set the delimiter to match the builder (default <code>/</code>).</p></div>
+    <div class="panel"><h3>4. Caption the action</h3><p>The template already holds the dateline, venue and credit. You type only who and what: <code>/a10/ scores a touchdown</code>. Photo Mechanic expands the code when you leave the field.</p></div>
+  </div>
+
+  <h3>What the builder's codes and tokens mean</h3>
+  <div class="tablebox"><table>
+    <thead><tr><th>You type</th><th>You get</th><th>Where it comes from</th></tr></thead>
+    <tbody>
+      <tr><td><code>/a10/</code></td><td>Player #10 of team A, written out in full</td><td>Code replacement file (first letter of the tricode + jersey number)</td></tr>
+      <tr><td><code>/a10#2/</code></td><td>The second version of that player: name only, or last name</td><td>Extra columns in Advanced settings</td></tr>
+      <tr><td><code>/atl/</code></td><td>The team's full name</td><td>The team's tricode</td></tr>
+      <tr><td><code>{name}</code> <code>{first}</code> <code>{last}</code></td><td>Full, first or last name</td><td>Tokens for building your own columns</td></tr>
+      <tr><td><code>{num}</code> <code>{pos}</code> <code>{team}</code> <code>{theteam}</code></td><td>Jersey number, position, team name, team name with "the"</td><td>Tokens for building your own columns</td></tr>
+      <tr><td><code>{away}</code> <code>{home}</code> <code>{sport}</code></td><td>Matchup words in a batch caption lead</td><td>Batch export in Step 2</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Where each field lands in the file</h3>
+  <div class="tablebox"><table>
+    <thead><tr><th>Builder field</th><th>IPTC / XMP field</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td>Caption</td><td>Description</td><td>What publishers print and what search engines read</td></tr>
+      <tr><td>Headline</td><td>Headline</td><td>The short title wire services and DAMs sort by</td></tr>
+      <tr><td>Event</td><td>Event (IPTC Extension)</td><td>Groups every photo from one game or event</td></tr>
+      <tr><td>Venue, city, state, country</td><td>Sublocation, City, State, Country</td><td>Lets you search by place</td></tr>
+      <tr><td>Credit and copyright</td><td>Credit Line, Creator, Copyright Notice</td><td>Keeps attribution and rights with the file</td></tr>
+      <tr><td>Keywords</td><td>Keywords</td><td>The words people actually search: names, teams, themes</td></tr>
+    </tbody>
+  </table></div>
+
+  <footer>Made by <a href="https://ashergreenephoto.com">Asher Greene Photo</a> · Atlanta, Georgia · <a href="https://github.com/ashecrtv/Metadata-Template-Builder" target="_blank" rel="noopener">Code on GitHub</a></footer>
+</div>
+<script>
+// Six real shoots, captions exactly as they appear in the showcase galleries. "before" is what a camera writes; "after" is what the template and ingest name add.
+const PHOTOS = [
+  { img:"photos/giants/20240913_NYG_GiantsvsBengals_AG_01466.jpg", before:"DSC_1466.JPG", file:"20240913_NYG_GiantsvsBengals_AG_01466.JPG",
+    cap:"EAST RUTHERFORD, NEW JERSEY - OCTOBER 13: Tyrone Tracy Jr. #29 of the New York Giants celebrates after scoring a rushing touchdown during the game between the Cincinnati Bengals and the New York Giants at MetLife Stadium on October 13, 2024 in East Rutherford, New Jersey. (Photo by Asher Greene/New York Giants)", kw:"2024, New York Giants, Cincinnati Bengals, Tyrone Tracy Jr., MetLife Stadium, NFL, Football, Touchdown" },
+  { img:"photos/giants/20240907_NYG_GiantsvsVikings_AG_0041.jpg", before:"DSC_0041.JPG", file:"20240907_NYG_GiantsvsVikings_AG_0041.JPG",
+    cap:"EAST RUTHERFORD, NEW JERSEY - SEPTEMBER 8: Tyler Nubin #31, Bobby Okereke #58, Andru Phillips #22, Deonte Banks #3, Jason Pinnock #27, and Dane Belton #24 of the New York Giants celebrate a fumble recovery by Andru Phillips during the game between the Minnesota Vikings and the New York Giants at MetLife Stadium on September 8, 2024 in East Rutherford, New Jersey. (Photo by Asher Greene/New York Giants)", kw:"2024, New York Giants, Minnesota Vikings, MetLife Stadium, NFL, Football, Fumble Recovery" },
+  { img:"photos/agnes/20240511_AgnesScottCollege_135thCommencement_AG_00004.jpg", before:"IMG_8823.JPG", file:"20240511_AgnesScottCollege_135thCommencement_AG_00004.JPG",
+    cap:"DECATUR, GEORGIA - MAY 11: A general overview of the Agnes Scott College 135th Commencement Ceremony at Agnes Scott College on May 11, 2024 in Decatur, Georgia. (Photo by Asher Greene/Hagy Photography/Agnes Scott College)", kw:"2024, Agnes Scott College, Commencement, Graduation, Wasfia Nazreen, Commencement Speaker, Decatur, Georgia, Event" },
+  { img:"photos/jonah/20230406_ASHE_JonahRuffinPortraitSession_AG_00007.jpg", before:"IMG_0412.JPG", file:"20230406_ASHE_JonahRuffinPortraitSession_AG_00007.JPG",
+    cap:"ATLANTA, GEORGIA - APRIL 6: A portrait session with Jonah Ruffin at The Goat Farm on April 6, 2023 in Atlanta, Georgia. (Photo by Asher Greene/ASHE)", kw:"2023, Jonah Ruffin, Portrait, The Goat Farm, Atlanta, Georgia, Editorial, Fashion" },
+  { img:"photos/giants/20240910_NYG_AdoptAFirehouse_AG_0039.jpg", before:"DSC_0039.JPG", file:"20240910_NYG_AdoptAFirehouse_AG_0039.JPG",
+    cap:"NEW YORK, NEW YORK - SEPTEMBER 10: Members of the New York Giants offensive line visit FDNY Engine 15/Ladder 18 as part of the team's Adopt-A-Firehouse tradition in honor of September 11 on September 10, 2024 in New York City. (Photo by Asher Greene/New York Giants)", kw:"2024, New York Giants, FDNY, Adopt-A-Firehouse, Engine 15, Ladder 18, September 11, Community" },
+  { img:"photos/agnes/20240511_AgnesScottCollege_135thCommencement_AG_00003.jpg", before:"IMG_8790.JPG", file:"20240511_AgnesScottCollege_135thCommencement_AG_00003.JPG",
+    cap:"DECATUR, GEORGIA - MAY 11: A general overview of the Agnes Scott College 135th Commencement Ceremony at Agnes Scott College on May 11, 2024 in Decatur, Georgia. (Photo by Asher Greene/Hagy Photography/Agnes Scott College)", kw:"2024, Agnes Scott College, Commencement, Black Student Union, BSU, Portrait, Decatur, Georgia" }
+];
+let MODE = "after";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]);
+const hi = (t, q) => q ? esc(t).replace(new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig"), "<mark>$1</mark>") : esc(t);
+function draw(){
+  const q = document.getElementById("q").value.trim(); let n = 0;
+  document.getElementById("grid").innerHTML = PHOTOS.map(p => {
+    const text = MODE === "after" ? [p.file, p.cap, p.kw].join(" ") : p.before;
+    const hit = !q || text.toLowerCase().includes(q.toLowerCase()); if (hit && q) n++;
+    return `<div class="card ${hit ? "" : "miss"}"><div class="ph"><img src="${p.img}" alt="" loading="lazy"></div><div class="meta">
+      <div class="fn" title="${esc(MODE === "after" ? p.file : p.before)}">${hi(MODE === "after" ? p.file : p.before, q)}</div>
+      ${MODE === "after" ? `<p class="cap">${hi(p.cap, q)}</p><div class="kw">${hi(p.kw, q)}</div>` : `<p class="cap none">No caption. No keywords. No credit.</p>`}</div></div>`;
+  }).join("");
+  document.getElementById("count").textContent = q ? n : PHOTOS.length;
+}
+document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => { MODE = b.dataset.mode; document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); draw(); }));
+document.querySelectorAll(".chips button").forEach(b => b.addEventListener("click", () => { document.getElementById("q").value = b.textContent; draw(); }));
+document.getElementById("q").addEventListener("input", draw);
+draw();
+</script>
+</body>
+</html>

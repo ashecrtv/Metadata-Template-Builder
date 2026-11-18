@@ -82,7 +82,7 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
 </head>
 <body>
 <div class="wrap">
-  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><nav><nav class="tabs" aria-label="Pages"><a href="booking.html">Booking</a><a href="index.html">Builder</a><a href="board.html" aria-current="page">Job board</a></nav></nav></header>
+  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><nav><nav class="tabs" aria-label="Pages"><a href="booking.html">Booking</a><a href="index.html">Builder</a><a href="board.html" aria-current="page">Job board</a><a href="learn.html">Learn</a></nav></nav></header>
 
   <div class="top">
     <div><h1>Job board</h1><p class="sub" id="summary"></p></div>
@@ -117,6 +117,7 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
     <label>Status<select name="status"></select></label>
     <label>Shoot type<select name="type"><option value="game">Gameday</option><option value="portrait">Portrait</option><option value="commercial">Commercial</option><option value="event">Event</option><option value="practice">Practice</option></select></label>
     <label class="full">Event / project name<input name="name"></label>
+    <label class="full">Special or themed event<input name="theme"></label>
     <div class="sec">Client</div>
     <label>Organization / client<input name="org"></label>
     <label>Department<input name="department"></label>
@@ -171,6 +172,7 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
   <h2>Add from booking email</h2>
   <p class="note">Paste the whole booking email (select all in Gmail, copy, paste here), or just its builder link.</p>
   <textarea id="linkIn" rows="8" style="margin-top:8px"></textarea>
+  <div class="bar" style="margin:6px 0 0"><button type="button" class="ghost" id="emlPick">Or choose a saved email (.eml)</button><input type="file" id="emlFile" accept=".eml,.txt,message/rfc822" hidden></div>
   <p class="note" id="linkErr" style="color:#a3271b"></p>
   <div class="foot"><button value="ok" id="linkOk">Add job</button><button value="cancel" class="ghost">Cancel</button></div>
 </form></dialog>
@@ -341,8 +343,23 @@ $("#toBuilder").onclick = () => { [...F.elements].forEach(el => { if (el.name) E
 
 /* ---------- Add from a booking link ---------- */
 $("#addLink").onclick = () => { $("#linkIn").value = ""; $("#linkErr").textContent = ""; $("#linkDlg").showModal(); };
+
+// Emails: .eml files (and raw source copied from Gmail's "Show original") come MIME-encoded.
+// Pull out the plain-text part and decode it so the readers below see normal text.
+function emailText(raw){
+  raw = String(raw || "").replace(/\r\n/g, "\n");
+  if (!/^(content-type|mime-version|received|from|return-path|delivered-to):/im.test(raw.slice(0, 4000))) return raw;
+  const qp = t => t.replace(/=\n/g, "").replace(/(?:=[0-9A-F]{2})+/gi, m => { try { return decodeURIComponent(m.replace(/=/g, "%")); } catch(e){ return m; } });
+  const b64 = t => { try { return decodeURIComponent(escape(atob(t.replace(/\s+/g, "")))); } catch(e){ return t; } };
+  const parts = raw.split(/\n--[^\n]+\n/);
+  const pick = parts.find(p => /content-type:\s*text\/plain/i.test(p)) || parts.find(p => /content-type:\s*text\/html/i.test(p)) || raw;
+  const i = pick.search(/\n\n/), head = i >= 0 ? pick.slice(0, i) : "", body = i >= 0 ? pick.slice(i + 2) : pick;
+  let t = /quoted-printable/i.test(head) ? qp(body) : /base64/i.test(head) ? b64(body) : body;
+  if (/text\/html/i.test(head)) t = t.replace(/<br\s*\/?>|<\/(p|div|tr|h\d)>/gi, "\n").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
+  return t.replace(/\n--[^\n]*--\s*$/, "").trim();
+}
 // Reads the email's "Label:" / value lines; the builder link fills anything missing.
-const EMAIL = { "name":"contact", "org":"org", "department":"department", "email":"email", "phone":"phone", "dayof name":"dayofName", "dayof phone":"dayofPhone", "type":"type", "event name":"name",
+const EMAIL = { "name":"contact", "org":"org", "department":"department", "email":"email", "phone":"phone", "dayof name":"dayofName", "dayof phone":"dayofPhone", "type":"type", "event name":"name", "theme":"theme",
   "photographer":"photographer", "subjects":"subjects", "date":"date", "start":"start", "end":"end", "duration":"duration", "venue":"venue", "address":"address", "city":"city", "state":"state",
   "coverage":"coverage", "deadline":"deadline", "usage":"usage", "keywords":"keywords", "shotlist":"shotlist", "notes":"notes" };
 function readEmail(t){
@@ -357,16 +374,18 @@ function readEmail(t){
   delete o.dayofName; delete o.dayofPhone; return o;
 }
 $("#linkOk").onclick = e => {
-  const t = $("#linkIn").value, m = t.match(/[?&]book=([A-Za-z0-9_-]+)/);
+  const t = emailText($("#linkIn").value), m = t.match(/[?&]book=([A-Za-z0-9_-]+)/);
   let b = {}; try { if (m) b = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/"))))); } catch(err){}
   const em = readEmail(t), d = { ...b, ...Object.fromEntries(Object.entries(em).filter(([, v]) => v)) };
   if (!d.org && !d.name && !d.date){ e.preventDefault(); $("#linkErr").textContent = "That doesn't look like a booking email or link."; return; }
   const dup = JOBS.find(j => j.date === (d.date || "") && (j.org || "") === (d.org || "") && (j.name || "") === (d.name || ""));
   if (dup){ e.preventDefault(); $("#linkErr").textContent = "That booking is already on the board. Opening it."; setTimeout(() => { $("#linkDlg").close(); openJob(dup); }, 900); return; }
-  const F2 = ["type","name","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"];
+  const F2 = ["type","name","theme","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"];
   const j = { id:uid(), status:"Requested", created:new Date().toISOString() }; F2.forEach(k => j[k] = d[k] || ""); if (!TYPES[j.type]) j.type = "event";
   JOBS.push(j); save(); render(); setTimeout(() => openJob(j), 50);
 };
+$("#emlPick").onclick = () => $("#emlFile").click();
+$("#emlFile").onchange = async e => { const f = e.target.files[0]; if (!f) return; $("#linkIn").value = emailText(await f.text()); e.target.value = ""; };
 $("#addNew").onclick = () => openJob(null);
 
 /* ---------- Events ---------- */
@@ -406,7 +425,7 @@ $("#importFile").onchange = e => {
 const FROM_FORM = { name:"contact", event_name:"name" };
 function jobFromBooking(b){
   const j = { id:uid(), status:"Requested", created:b.created || new Date().toISOString(), sub:b.sub };
-  ["type","name","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"].forEach(k => j[k] = "");
+  ["type","name","theme","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"].forEach(k => j[k] = "");
   Object.entries(b).forEach(([k, v]) => { const to = FROM_FORM[k] || k; if (to in j && to !== "id" && to !== "status" && v) j[to] = String(v).trim(); });
   j.dayof = [b.dayof_name, b.dayof_phone].filter(Boolean).join(" · ");
   if (!TYPES[j.type]) j.type = "event";

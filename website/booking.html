@@ -60,7 +60,7 @@ button:disabled{opacity:.6;cursor:default}
 </head>
 <body>
 <div class="wrap">
-  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><span style="display:flex;gap:12px;align-items:center"><nav class="tabs" aria-label="Pages"><a href="booking.html" aria-current="page">Booking</a><a href="index.html">Builder</a><a href="board.html">Job board</a></nav><a class="small ext" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></span></header>
+  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><span style="display:flex;gap:12px;align-items:center"><nav class="tabs" aria-label="Pages"><a href="booking.html" aria-current="page">Booking</a><a href="index.html">Builder</a><a href="board.html">Job board</a><a href="learn.html">Learn</a></nav><a class="small ext" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></span></header>
 
   <div id="formView">
   <h1>Book a shoot</h1>
@@ -91,6 +91,7 @@ button:disabled{opacity:.6;cursor:default}
         <label><input type="radio" name="type" value="practice"><span>Practice</span></label>
       </div>
       <label><span id="nameLabel">Event name</span> <span class="req">*</span><input maxlength="200" name="event_name" id="eventName" required placeholder="e.g. Spring Alumni Dinner"></label>
+      <label>Special or themed event <span style="font-weight:400;color:var(--muted)">(optional)</span><input maxlength="120" name="theme" placeholder="e.g. Senior Night, Salute to Service, Pride Night, Home Opener"></label>
       <label>Preferred photographer <small>(optional)</small><input maxlength="200" name="photographer" placeholder="Leave blank if anyone on the team works"></label>
       <label>Key subjects <small>(names of people, teams or sponsors to tag, comma-separated)</small><input maxlength="200" name="subjects" placeholder="e.g. Bijan Robinson, Arthur Blank, Coca-Cola"></label>
     </fieldset>
@@ -241,7 +242,7 @@ listNames();
 
 // The builder link carries what the builder needs; base64url so it survives email
 function builderLink(d){
-  const pick = { type:d.type, name:d.event_name, org:d.org, subjects:d.subjects, keywords:d.keywords, date:d.date, venue:d.venue, address:d.address, photographer:d.photographer, city:d.city, state:d.state };
+  const pick = { type:d.type, name:d.event_name, org:d.org, subjects:d.subjects, keywords:d.keywords, theme:d.theme, date:d.date, venue:d.venue, address:d.address, photographer:d.photographer, city:d.city, state:d.state };
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(pick)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   return new URL("index.html?book=" + code, location.href).href;
 }

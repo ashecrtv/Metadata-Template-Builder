@@ -249,12 +249,13 @@ body.noscroll{overflow:hidden}
 .tabs{display:inline-flex;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .site nav .tabs a{padding:6px 12px;color:var(--muted);font-weight:600}.site nav .tabs a[aria-current]{color:var(--ink)}.site nav{align-items:center}
 @media (max-width:640px){header.site{flex-wrap:wrap;gap:10px}.site nav{flex-wrap:wrap;gap:10px}.site nav .ext{display:none}}
+.grow{display:flex;align-items:center;gap:6px}.grow .game{flex:1}.batchbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}.batchbar input{flex:1;min-width:220px}.confirmed{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft,transparent)}
 </style>
 </head>
 <body>
 <header class="site">
   <a class="brand" href="https://ashergreenephoto.com" target="_blank" rel="noopener" aria-label="ASHE, ashergreenephoto.com"><span class="logo">ASHE<sup>®</sup></span><span class="divider" aria-hidden="true"></span><span class="wordmark">Metadata Template Builder</span></a>
-  <nav><button id="showIntro" type="button">How it works</button><span class="tabs" role="navigation" aria-label="Pages"><a href="booking.html">Booking</a><a href="index.html" aria-current="page">Builder</a><a href="board.html">Job board</a></span><a class="ext" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></nav>
+  <nav><button id="showIntro" type="button">How it works</button><span class="tabs" role="navigation" aria-label="Pages"><a href="booking.html">Booking</a><a href="index.html" aria-current="page">Builder</a><a href="board.html">Job board</a><a href="learn.html">Learn</a></span><a class="ext" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></nav>
 </header>
 <main id="top">
   <section class="hero">
@@ -284,7 +285,14 @@ body.noscroll{overflow:hidden}
   <section class="step" id="step1">
     <div class="step-h"><span class="n">Step 1</span><h2>Find the shoot</h2></div>
     <p class="step-help">Type a matchup (“2026 WNBA Finals Game 4 Valkyries vs Dream”, “49ers vs Falcons”, “Lakers vs Hawks”) or browse a league by date. Not a listed game? Set up a custom shoot.</p>
-    <div class="panel">
+    <div class="panel" id="startPick">
+      <b>What are you shooting?</b>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px">
+        <button class="primary" data-start="sport">Sport (search ESPN)</button><button data-start="event">Event</button><button data-start="portrait">Portrait</button><button data-start="commercial">Commercial</button><button data-start="practice">Practice</button><button data-start="game">Game not on ESPN</button>
+        <span style="flex:1"></span><button class="small" id="startOver" type="button" title="Clear everything and start a new shoot">Start over</button>
+      </div>
+    </div>
+    <div class="panel" id="findPanel" hidden>
       <div class="row">
         <input id="q" type="text" placeholder="e.g. 2026 WNBA Finals Game 4 Golden State Valkyries vs Atlanta Dream" autocomplete="off">
         <select id="leagueSel" aria-label="League"></select>
@@ -406,12 +414,6 @@ body.noscroll{overflow:hidden}
           <button class="primary" id="dlXmp">Download template (.XMP)</button>
         </div>
         <div class="panel">
-          <h2 style="margin:0">Job board</h2>
-          <p class="small muted">Attach this template and the ingest file name to the job, so they're waiting on the board.</p>
-          <form id="boardForm" class="row" style="gap:8px;flex-wrap:wrap"><input type="password" id="boardKeyIn" placeholder="Owner passcode" autocomplete="current-password" style="flex:1;min-width:140px" hidden><button class="primary" id="toBoard">Save to job board</button></form>
-          <div class="small muted" id="toBoardOut" style="margin-top:6px"></div>
-        </div>
-        <div class="panel">
           <h2 style="margin:0">Ingest file name</h2>
           <p class="small muted">Ingest ▸ Rename as: YYYYMMDD_CLIENT_AWAYvsHOME_INITIALS_{sequence}</p>
           <input type="text" id="ingestOut" spellcheck="false" style="width:100%;font-family:var(--mono);font-size:13px" title="Click to edit">
@@ -419,9 +421,10 @@ body.noscroll{overflow:hidden}
           <button class="small" data-copy="ingestOut">Copy file name</button>
         </div>
         <div class="panel">
-          <h2 style="margin:0">Structured Keywords</h2>
-          <p class="small muted">A click-to-add pick list: League › Team › Players and coach, plus an Action list.</p>
-          <button class="small" id="dlStruct">Download Structured Keywords (.txt)</button>
+          <h2 style="margin:0">Job board</h2>
+          <p class="small muted">Attach this template and the ingest file name to the job, so they're waiting on the board.</p>
+          <form id="boardForm" class="row" style="gap:8px;flex-wrap:wrap"><input type="password" id="boardKeyIn" placeholder="Owner passcode" autocomplete="current-password" style="flex:1;min-width:140px" hidden><button class="primary" id="toBoard">Save to job board</button></form>
+          <div class="small muted" id="toBoardOut" style="margin-top:6px"></div>
         </div>
       </div>
       <div class="panel codeOnly" style="margin-top:16px">
@@ -438,6 +441,13 @@ body.noscroll{overflow:hidden}
           <button id="printCheat">Print cheat sheet</button>
         </div>
         <p class="small muted" style="margin-bottom:0">In Photo Mechanic: Image ▸ Code Replacements… (or Preferences ▸ Code Replacements), load this .txt and set the delimiter to the same character as in Step 2.</p>
+      </div>
+      <div class="dl-grid" style="margin-top:16px">
+        <div class="panel">
+          <h2 style="margin:0">Structured Keywords</h2>
+          <p class="small muted">A click-to-add pick list: League › Team › Players and coach, plus an Action list.</p>
+          <button class="small" id="dlStruct">Download Structured Keywords (.txt)</button>
+        </div>
       </div>
     </section>
 
@@ -892,18 +902,65 @@ async function loadGames(){
   if ((Q.year || Q.playoff || Q.game) && picks.length === 1) await pickGame(S.games.indexOf(picks[0]));
 }
 function renderGames(){
-  const el = $("#gameList"), [a,b] = S.sides;
+  const el = $("#gameList"), [a,b] = S.sides; S.batch = S.batch || new Set();
   const who = b && !b.fromGame ? `${a.teamName} and ${b.teamName}` : a.teamName;
   if (!S.games.length){ el.innerHTML = `<div class="small muted">No games for ${esc(who)} found on ESPN's schedule. Enter the details below.</div>`; return; }
-  let h = `<div class="small muted" style="margin-bottom:6px">Pick the game you're shooting (${S.games.length} found for ${esc(who)}), or enter the details yourself below.</div><div class="games">`;
+  if (S.gameConfirmed && S.gameIdx >= 0){   // confirmed: the list rolls up to one line
+    const x = evInfo(S.games[S.gameIdx]);
+    el.innerHTML = `<div class="confirmed"><span>✓ <b>${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</b> · ${esc(x.dateStr)}</span><button class="small" id="gameChange" type="button">Change game</button></div>`; return;
+  }
+  let h = `<div class="small muted" style="margin-bottom:6px">Pick the game you're shooting (${S.games.length} found for ${esc(who)}), or tick several to make them all at once.</div>
+    <div class="batchbar"><button class="small" type="button" data-bsel="home">Tick ${esc(a.teamName)} home games</button><button class="small" type="button" data-bsel="all">Tick all</button><button class="small" type="button" data-bsel="none">Clear ticks</button>
+    <input id="batchLead" type="text" placeholder="Optional caption lead: The {away} play the {home} in a {sport} game" value="${esc(S.batchLead || "")}">
+    <button class="primary small" type="button" id="batchGo" ${S.batch.size ? "" : "disabled"}>Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)</button></div><div id="batchOut" class="small muted"></div><div class="games">`;
   S.games.forEach((e,i)=>{
     if (i===0 && S.upCount) h += `<div class="ghead">Upcoming</div>`;
     if (i===S.upCount) h += `<div class="ghead">Past</div>`;
     const x = evInfo(e);
-    h += `<button class="game ${S.gameIdx===i?"on":""}" data-game="${i}"><span class="gd">${esc(x.dateStr)}</span><span class="gm">${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</span><span class="gv">${esc([x.venue, x.city].filter(Boolean).join(", "))}</span><span class="gs">${esc(x.status)}</span></button>`;
+    h += `<div class="grow"><input type="checkbox" data-batch="${i}" aria-label="Include in batch" ${S.batch.has(i) ? "checked" : ""}><button class="game ${S.gameIdx===i?"on":""}" data-game="${i}"><span class="gd">${esc(x.dateStr)}</span><span class="gm">${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</span><span class="gv">${esc([VENUE_ALIAS[x.venue] || x.venue, x.city].filter(Boolean).join(", "))}</span><span class="gs">${esc(x.status)}</span></button></div>`;
   });
-  el.innerHTML = h + `</div>`;
+  h += `</div>`;
+  if (S.gameIdx >= 0) h += `<div class="row" style="margin-top:8px"><button class="primary" id="gameConfirm" type="button">Confirm this game</button><span class="small muted">The list rolls up so you can move on.</span></div>`;
+  el.innerHTML = h;
 }
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-batch]"); if (c){ S.batch = S.batch || new Set(); c.checked ? S.batch.add(+c.dataset.batch) : S.batch.delete(+c.dataset.batch); const go = $("#batchGo"); go.disabled = !S.batch.size; go.textContent = `Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)`; }
+});
+document.addEventListener("input", e => { if (e.target.id === "batchLead") S.batchLead = e.target.value; });
+document.addEventListener("click", e => {
+  const t = e.target;
+  if (t.id === "gameConfirm"){ S.gameConfirmed = true; renderGames(); return; }
+  if (t.id === "gameChange"){ S.gameConfirmed = false; renderGames(); return; }
+  if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => t.dataset.bsel === "all" || compId(evInfo(S.games[i]).home) === String(a.team.id))); renderGames(); return; }
+  if (t.id === "batchGo") exportBatch();
+});
+// Batch: make the template, ingest name and code file for every ticked game, then hand back one .zip.
+async function exportBatch(){
+  const out = $("#batchOut"), list = [...S.batch].sort((x, y) => evInfo(S.games[x]).ymd.localeCompare(evInfo(S.games[y]).ymd)), lead = (S.batchLead || "").trim();
+  if (!window.JSZip) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+  const zip = new JSZip(), names = [], keepTicks = new Set(S.batch);
+  for (const [n, i] of list.entries()){
+    out.textContent = `Making ${n + 1} of ${list.length}…`;
+    S.gameConfirmed = false; await pickGame(i); S.batch = keepTicks;
+    const g = S.game, home = S.sides[g.home], away = S.sides[1 - g.home];
+    if (lead && home && away){
+      const sport = (SPORT[sportOf(home.L)] || "").toLowerCase() || "game", fillLead = lead.replace(/\{away\}/g, away.teamName).replace(/\{home\}/g, home.teamName).replace(/\{sport\}/g, sport).replace(/\{venue\}/g, g.venue);
+      const auto = captionTemplate();
+      const m = auto.match(/^(.*?:\s*)(?:during|before|after)\b.*?\bbetween the .+? and the .+?(?= at )/);
+      g.capCustom = m ? m[1] + fillLead + auto.slice(m[0].length) : auto;
+      renderAll();
+    }
+    zip.file(xmpFileName(), xmpText());
+    zip.file("Code Replacements/" + gameFileName(), fileText(S.sides));
+    names.push(`${g.date}  ${ingestName()}`);
+  }
+  zip.file("Ingest file names.txt", names.join("\n") + "\n");
+  const blob = await zip.generateAsync({ type:"blob" }), a = document.createElement("a"), team = (S.sides[0]?.teamName || "Batch").replace(/\W+/g, "");
+  a.href = URL.createObjectURL(blob); a.download = `${team}_${list.length} templates.zip`; document.body.appendChild(a); a.click(); a.remove();
+  S.lastBatch = blob; out.textContent = `Done: ${list.length} templates, code files and ingest names in one .zip.`;
+}
+// ESPN's venue names that need the full name in captions (add your own here).
+const VENUE_ALIAS = { "Gateway Center":"Gateway Center Arena" };
 async function pickGame(i){
   const e = S.games[i]; if (!e) return;
   const x = evInfo(e), a = S.sides[0], g = S.game;
@@ -918,7 +975,7 @@ async function pickGame(i){
     assignPrefixes(); renderTeams();
   }
   g.date = x.ymd;                                              // the date where the game is played
-  g.venue = x.venue; g.city = x.city; g.state = x.state;
+  g.venue = VENUE_ALIAS[x.venue] || x.venue; g.city = x.city; g.state = x.state;   // ESPN short names → the full name you caption with
   g.home = compId(x.home) === String(a.team.id) ? 0 : 1;   // ESPN's designated home team, neutral sites included
   g.neutral = !!x.c.neutralSite;                             // bowls, Final Fours, overseas games: "A vs B" in the headline
   const sk = seasonKind(e);
@@ -1029,7 +1086,7 @@ function seasonKind(e){
   return { kind:"Regular Season", round:"" };
 }
 // ESPN sometimes puts the result in the note ("Washington Spirit advance 3-0 on penalties"); that's not an event name.
-const RESULT_NOTE = /\b(advances?|wins?|won|leads?|tied|on penalties|aggregate|eliminat\w*)\b/i;
+const RESULT_NOTE = /\b(advances?|wins?|won|leads?|tied|on penalties|aggregate|eliminat\w*|flex(ed)?|tbd|tba|postponed|rescheduled|if necessary)\b|\d{1,2}\/\d{1,2}/i;   // results and scheduling notes ("Flex Game: 12/26 or 12/27") never go in a caption
 const singularRound = s => s.replace(/(finals|rounds)$/i, m => m.slice(0, -1));   // "Semifinals" → "Semifinal"
 // Season name: "2026" for one-year leagues, "2026-27" for NBA, NHL, college basketball and the Premier League.
 function seasonName(L, ymd){
@@ -1470,7 +1527,7 @@ async function startCustom(){
   const keep = S.prefill || {};
   const tc = id => titleCase(v(id));                         // names in title case everywhere they appear
   S.custom = { type:t, name:tc("cEvent"), subject:tc("cSubject"), occasion:tc("cOccasion"), brand:tc("cBrand"), project:tc("cProject"), sport:$("#cSport").value, comp:tc("cComp"), team:tc("cTeam") };
-  S.pairs = []; S.games = []; S.upCount = 0; S.gameIdx = -1; S.sides = [null, null];
+  S.pairs = []; S.games = []; S.upCount = 0; S.gameIdx = -1; S.sides = [null, null]; S.gameConfirmed = false; S.batch = new Set();
   const today = new Date(), ymd = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   S.game = { date: keep.date || ymd, venue: keep.venue || "", city: keep.city || "", state: keep.state || "", home:0, event:"", eventCap:"", gameWord:"", seasonType:"Regular Season", arenaAbbr: t === "game" ? arenaAbbr(keep.venue||"") : "", headCustom:"", eventCustom:"" };
   if (t === "game"){
@@ -2341,7 +2398,7 @@ document.addEventListener("click", async e=>{
   if (d.day!==undefined) return pickDayGame(+d.day);
   if (t.id==="customToggle"){ $("#customPanel").classList.toggle("hidden"); return showCustomFields(); }
   if (t.id==="customStart") return startCustom();
-  if (t.id==="cParse") return applyParsed(parseEventText($("#cPaste").value));
+  if (t.id==="cParse") return smartRead($("#cPaste").value);
   if (t.id==="cIcs"){ $("#icsIn").value = ""; return $("#icsIn").click(); }
   if (t.id==="cImg"){ $("#imgIn").value = ""; return $("#imgIn").click(); }
   if (t.id==="browseGo") return browseDay();
@@ -2363,7 +2420,8 @@ document.addEventListener("click", async e=>{
   if (t.id==="dlStruct"){ if (!S.sides[0]) return; return download(structuredKeywords(), xmpFileName().replace(/\.XMP$/, "_Structured Keywords.txt")); }
   if (t.id==="phraseReset"){ const a = S.sides[0]; if (a && CFG.phraseText) { delete CFG.phraseText[sportOf(a.L)]; saveCfg(); } $("#phraseBox").blur(); return renderAll(); }
   if (t.id==="dlBoth") return download(fileText(S.sides), gameFileName());
-  if (t.id==="dlXmp"){ if (!S.sides[0] && !S.custom) return; return download(xmpText(), xmpFileName()); }
+  if (t.id==="dlXmp"){ if (!S.sides[0] && !S.custom) return; if (S.booking) saveToBoard();   // a booked job: the template also goes onto the board
+    return download(xmpText(), xmpFileName()); }
   if (t.id==="dl0" || t.id==="dl1"){ const s = S.sides[+t.id.slice(2)]; return download(fileText([s]), `${s.L.n.replace(/\W+/g,"")}_${s.teamName.replace(/\W+/g,"")}_Roster.txt`); }
   if (t.id==="printCheat"){ buildCheat(); return window.print(); }
 });
@@ -2436,10 +2494,27 @@ async function fetchRosterPage(i){
     S.sides[i].prText = j.text; S.sides[i].prFile = new URL(url).hostname; applyPR(i);
   } catch(e){ st.textContent = e.message; }
 }
+
+// Emails: .eml files (and raw source copied from Gmail's "Show original") come MIME-encoded.
+// Pull out the plain-text part and decode it so the readers below see normal text.
+function emailText(raw){
+  raw = String(raw || "").replace(/\r\n/g, "\n");
+  if (!/^(content-type|mime-version|received|from|return-path|delivered-to):/im.test(raw.slice(0, 4000))) return raw;
+  const qp = t => t.replace(/=\n/g, "").replace(/(?:=[0-9A-F]{2})+/gi, m => { try { return decodeURIComponent(m.replace(/=/g, "%")); } catch(e){ return m; } });
+  const b64 = t => { try { return decodeURIComponent(escape(atob(t.replace(/\s+/g, "")))); } catch(e){ return t; } };
+  const parts = raw.split(/\n--[^\n]+\n/);
+  const pick = parts.find(p => /content-type:\s*text\/plain/i.test(p)) || parts.find(p => /content-type:\s*text\/html/i.test(p)) || raw;
+  const i = pick.search(/\n\n/), head = i >= 0 ? pick.slice(0, i) : "", body = i >= 0 ? pick.slice(i + 2) : pick;
+  let t = /quoted-printable/i.test(head) ? qp(body) : /base64/i.test(head) ? b64(body) : body;
+  if (/text\/html/i.test(head)) t = t.replace(/<br\s*\/?>|<\/(p|div|tr|h\d)>/gi, "\n").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
+  return t.replace(/\n--[^\n]*--\s*$/, "").trim();
+}
+// A booking email (it holds a builder link) loads the whole booking; anything else is read for event details.
+function smartRead(raw){ const t = emailText(raw); $("#cPaste").value = t; const m = t.match(/[?&]book=([A-Za-z0-9_-]+)/); if (m) return loadBooking(m[1]); return applyParsed(parseEventText(t)); }
 // Drop a .txt / .eml / .ics file straight onto the paste box
 $("#cPaste").addEventListener("dragover", e => e.preventDefault());
-$("#cPaste").addEventListener("drop", async e => { const f = e.dataTransfer.files[0]; if (!f || !/\.(txt|eml|ics|text)$/i.test(f.name) && !f.type.startsWith("text")) return; e.preventDefault(); const txt = await f.text(); $("#cPaste").value = txt; applyParsed(parseEventText(txt)); });
-$("#icsIn").addEventListener("change", async e => { const f = e.target.files[0]; if (!f) return; const txt = await f.text(); $("#cPaste").value = txt; applyParsed(parseEventText(txt)); });
+$("#cPaste").addEventListener("drop", async e => { const f = e.dataTransfer.files[0]; if (!f || !/\.(txt|eml|ics|text)$/i.test(f.name) && !f.type.startsWith("text")) return; e.preventDefault(); smartRead(await f.text()); });
+$("#icsIn").addEventListener("change", async e => { const f = e.target.files[0]; if (!f) return; smartRead(await f.text()); });
 $("#imgIn").addEventListener("change", e => { const f = e.target.files[0]; if (f) readImage(f); });
 // Paste a screenshot straight into the box (⌘V): read it like a flyer.
 $("#cPaste").addEventListener("paste", e => { const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith("image/")); if (item){ e.preventDefault(); readImage(item.getAsFile()); } });
@@ -2519,9 +2594,25 @@ async function saveToBoard(){
 }
 $("#boardForm").addEventListener("submit", e => { e.preventDefault(); saveToBoard(); });
 
+/* ---------- Start: ask what the shoot is; Start over clears everything (your saved settings stay) ---------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-start]");
+  if (b){
+    document.querySelectorAll("[data-start]").forEach(x => x.classList.toggle("primary", x === b));
+    $("#findPanel").hidden = false;
+    const sport = b.dataset.start === "sport";
+    $("#q").closest(".row").hidden = !sport; $("#browseGo").closest(".row").hidden = !sport; $("#dayGames").hidden = !sport;
+    document.querySelectorAll("#findPanel .or").forEach(x => x.hidden = !sport); $("#customToggle").closest(".row").hidden = !sport;
+    if (sport){ $("#customPanel").classList.add("hidden"); $("#q").focus(); }
+    else { $("#customPanel").classList.remove("hidden"); $("#cType").value = b.dataset.start; $("#cType").dispatchEvent(new Event("change", { bubbles:true })); showCustomFields(); }
+    return;
+  }
+  if (e.target.id === "startOver"){ location.href = location.pathname; }
+});
+
 async function loadBooking(code){
   let b; try { b = JSON.parse(decodeURIComponent(escape(atob(code.replace(/-/g,"+").replace(/_/g,"/"))))); } catch(e){ return; }
-  S.booking = b;
+  S.booking = b; $("#findPanel").hidden = false;
   const set = (id, val) => { const el = $("#"+id); if (el && val){ el.value = val; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
   set("gClient", b.org);
   if (b.photographer && !$("#gPhotog").value.trim()) set("gPhotog", b.photographer);   // preferred photographer, only if none is set on this device
@@ -2529,7 +2620,7 @@ async function loadBooking(code){
     $("#q").value = b.name; $("#step1").scrollIntoView({ behavior:"smooth" }); await search();
     for (let t = 0; t < 60 && !(S.games && S.games.length); t++) await new Promise(r => setTimeout(r, 250));
     const k = (S.games || []).findIndex(e => b.date && Math.abs(new Date(e.date) - new Date(b.date + "T19:00:00-05:00")) < 20 * 3600e3);
-    if (k >= 0){ await pickGame(k); set("kwExtra", [b.subjects, b.keywords].filter(Boolean).join(", ")); }
+    if (k >= 0){ await pickGame(k); set("kwExtra", [b.theme, b.subjects, b.keywords].filter(Boolean).join(", ")); }
     return;
   }
   $("#cType").value = b.type || "event"; showCustomFields();
@@ -2544,7 +2635,7 @@ async function loadBooking(code){
   else $("#cEvent").value = b.name || "";
   S.prefill = { date:b.date, venue:b.venue, city:b.city, state:b.state };
   await startCustom();
-  set("kwExtra", [b.subjects, b.keywords].filter(Boolean).join(", "));   // after startCustom, which resets the shoot
+  set("kwExtra", [b.theme, b.subjects, b.keywords].filter(Boolean).join(", "));   // after startCustom, which resets the shoot
 }
 // First-visit "How it works" card: shown until dismissed (your name is remembered on this device), reopen from the header.
 (() => {
@@ -2594,7 +2685,7 @@ function renderWork(filter = "All"){
       <button type="button" class="small" data-try="${i}">${w.gallery ? "Open gallery →" : "Try this shoot →"}</button></div>
     </article>` : "").join("");
 }
-async function tryWork(i){
+async function tryWork(i){ $("#findPanel").hidden = false;
   const w = WORK[i];
   document.querySelectorAll(".work").forEach(el => el.classList.toggle("active", +el.dataset.wi === i));
   if (w.q){
