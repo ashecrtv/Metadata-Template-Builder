@@ -229,14 +229,14 @@ details summary{cursor:pointer;font-size:13px;color:var(--muted)}
 .gal-grid{display:flex;flex-wrap:wrap;gap:10px}.gal-grid::after{content:'';flex-grow:999}.gal-grid .gp{min-width:0}.gal-grid .gal-empty{flex-basis:100%}
 .gp{all:unset;cursor:pointer;display:block;border-radius:10px;overflow:hidden;background:var(--panel);border:1px solid var(--line)}
 .gp:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.gp .im:has(img){aspect-ratio:auto;display:block}.gp .im{aspect-ratio:3/2;background:var(--soft);display:grid;place-items:center;color:var(--muted);font-size:12px;position:relative}
-.gp .im img{width:100%;height:auto;display:block}
+.gp .im{aspect-ratio:var(--r,3/2);background:var(--soft);display:grid;place-items:center;color:var(--muted);font-size:12px;position:relative}
+.gp .im img{width:100%;height:100%;object-fit:cover;display:block}
 .gp .im .tag{position:absolute;left:8px;top:8px;background:var(--ink);color:var(--bg);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px}
 .gp .lb{padding:8px 10px;font-size:12.5px;line-height:1.35}
 .gp .lb b{display:block;font-size:13px}
 .gp.on{outline:2px solid var(--accent)}
 .gdet{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px}
-@media (max-width:760px){.gdet{grid-template-columns:1fr}}
+@media (max-width:760px){.gdet{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:420px){.gal-grid .gp{--h:150px}}
 .gdet .im{aspect-ratio:3/2;background:var(--soft);border-radius:8px;display:grid;place-items:center;color:var(--muted);font-size:13px;overflow:hidden}
 .gdet .im:has(img){aspect-ratio:auto;display:block;background:none}.gdet .im img{width:100%;height:auto;max-height:78vh;object-fit:contain;display:block}
@@ -372,8 +372,7 @@ body.noscroll{overflow:hidden}
           <input type="hidden" id="gGameWord">
           <label>Arena abbreviation<input type="text" id="gArenaAbbr" placeholder="e.g. SFA"></label>
           <label>Season type<select id="gSeasonType"><option>Regular Season</option><option>Preseason</option><option>Playoffs</option></select></label>
-          <label>Your team is<select id="gMySide"><option value="auto">Auto (from client)</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral / not a team</option></select><span class="small muted" id="mySideOut"></span></label>
-          <label>Caption wording<select id="gWording"><option value="auto">“against the …” when shooting for a team</option><option value="between">“between … and …” always</option></select></label>
+          <label>Your client is<select id="gMySide"><option value="auto">Auto (match the client name)</option><option value="home">The home team</option><option value="away">The away team</option><option value="neutral">Neutral / not a team</option></select><span class="small muted" id="mySideOut"></span></label>
         </div>
         <div class="group-h">Your credit <span style="text-transform:none;letter-spacing:0;font-weight:500">(saved per profile on this device)</span></div>
         <div class="row small" id="profileBar" style="gap:8px;flex-wrap:wrap;margin:0 0 10px"><span class="muted">Who's working?</span><select id="profileSel" aria-label="Profile"></select>
@@ -382,10 +381,11 @@ body.noscroll{overflow:hidden}
         <div class="fields" style="grid-template-columns:repeat(6,minmax(0,1fr))">
           <label>Photographer name<input type="text" id="gPhotog" placeholder="Full name, e.g. Jane Smith"></label>
           <label>Client / agency (after the /)<input type="text" id="gClient" placeholder="e.g. Getty Images (optional)"></label>
-          <label>Photographer title<input type="text" id="gPhotogTitle" placeholder="e.g. Staff Photographer (optional)"></label>
+          <label>Photographer title<input type="text" id="gPhotogTitle" placeholder="Defaults to Photographer"></label>
           <label style="grid-column:span 2">Description writer(s), full names<input type="text" id="gWriters" placeholder="Defaults to the photographer"></label>
           <label>Copyright owner<select id="gCopy"><option value="client">Client (© year + client)</option><option value="photographer">Photographer (© year + photographer)</option><option value="none">Leave blank</option></select></label>
           <label>Delimiter<input type="text" id="delim" maxlength="2"></label>
+          <label style="grid-column:span 6">Other photographers on this shoot <span class="muted">(one per line: Name, Title. Each gets their own template and file name in Step 4)</span><textarea id="gCrew" rows="2" placeholder="Madison Morris, Team Photographer"></textarea></label>
         </div>
         <div id="gameStatus" class="small muted"></div>
       </div>
@@ -398,6 +398,7 @@ body.noscroll{overflow:hidden}
       <div class="panel capbox">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">Caption</h2>
           <label class="small">Caption style <select id="gStyle"><option value="getty">Getty Images</option><option value="ap">AP</option><option value="imagn">Imagn / USA Today</option><option value="icon">Icon Sportswire</option><option value="zuma">ZUMA Press</option></select></label></div>
+        <label class="small" id="wordingRow" style="display:block;margin:0 0 8px">Caption wording <select id="gWording"><option value="auto">“against the …” when shooting for a team</option><option value="between">“between … and …” always</option></select></label>
         <p class="small muted" style="margin:-6px 0 0">The metadata template fills in the whole caption when you ingest. In each photo, click right after the dateline and type the player code and the action.</p>
         <div class="capkey"><span class="auto">Auto-filled</span><span class="fromcode">From your code</span><span class="blank">You type</span></div>
         <label>Template caption (before you add anything)</label>
@@ -430,7 +431,7 @@ body.noscroll{overflow:hidden}
 
     <section class="step">
       <div class="step-h"><span class="n">Step 4</span><h2>Download</h2></div>
-      <p class="step-help">Load these into Photo Mechanic: the metadata template on ingest, the code file under Code Replacements, and the Structured Keywords list if you like clicking names.</p>
+      <p class="step-help">Load these into Photo Mechanic: the metadata template on ingest, and, for games, the code file under Code Replacements and the Structured Keywords list.</p>
       <div class="dl-grid">
         <div class="panel">
           <h2 style="margin:0">Metadata template</h2>
@@ -466,12 +467,25 @@ body.noscroll{overflow:hidden}
         </div>
         <p class="small muted" style="margin-bottom:0">In Photo Mechanic: Image ▸ Code Replacements… (or Preferences ▸ Code Replacements), load this .txt and set the delimiter to the same character as in Step 2.</p>
       </div>
-      <div class="dl-grid" style="margin-top:16px">
+      <div class="dl-grid codeOnly" style="margin-top:16px">
         <div class="panel">
           <h2 style="margin:0">Structured Keywords</h2>
           <p class="small muted">A click-to-add pick list: League › Team › Players and coach, plus an Action list.</p>
           <button class="small" id="dlStruct">Download Structured Keywords (.txt)</button>
         </div>
+      </div>
+    </section>
+
+    <section class="step" id="moreStep">
+      <div class="panel">
+        <h2 style="margin:0">Make more templates</h2>
+        <p class="small muted">Your name, client and settings carry over.</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <button class="primary small" type="button" id="moreAnother">Create another template</button>
+          <button class="small" type="button" id="moreCrew">Templates for the other photographers (.zip)</button>
+          <button class="small codeOnly" type="button" id="moreSeason">Season templates (home, away or all)</button>
+        </div>
+        <div class="small muted" id="moreOut" style="margin-top:6px"></div>
       </div>
     </section>
 
@@ -967,29 +981,31 @@ function renderGames(){
     const x = evInfo(S.games[S.gameIdx]);
     el.innerHTML = `<div class="confirmed"><span>✓ <b>${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</b> · ${esc(x.dateStr)}</span><button class="small" id="gameChange" type="button">Change game</button></div>`; return;
   }
-  let h = `<div class="small muted" style="margin-bottom:6px">Pick the game you're shooting (${S.games.length} found for ${esc(who)}), or tick several to make them all at once.</div>
-    <div class="batchbar"><button class="small" type="button" data-bsel="home">Tick ${esc(a.teamName)} home games</button><button class="small" type="button" data-bsel="all">Tick all</button><button class="small" type="button" data-bsel="none">Clear ticks</button>
+  let h = `<div class="small muted" style="margin-bottom:6px">Pick the game you're shooting (${S.games.length} found for ${esc(who)}), or select several to make them all at once.</div>
+    <div class="batchbar"><button class="small" type="button" data-bsel="home">Select ${esc(a.teamName)} home games</button><button class="small" type="button" data-bsel="away">Select away games</button><button class="small" type="button" data-bsel="all">Select all</button><button class="small" type="button" data-bsel="none">Clear</button>
     <input id="batchLead" type="text" placeholder="Optional caption lead: The {away} play the {home} in a {sport} game" value="${esc(S.batchLead || "")}">
     <button class="primary small" type="button" id="batchGo" ${S.batch.size ? "" : "disabled"}>Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)</button></div><div id="batchOut" class="small muted"></div><div class="games">`;
   S.games.forEach((e,i)=>{
     if (i===0 && S.upCount) h += `<div class="ghead">Upcoming</div>`;
     if (i===S.upCount) h += `<div class="ghead">Past</div>`;
     const x = evInfo(e);
-    h += `<div class="grow"><input type="checkbox" data-batch="${i}" aria-label="Include in batch" ${S.batch.has(i) ? "checked" : ""}><button class="game ${S.gameIdx===i?"on":""}" data-game="${i}"><span class="gd">${esc(x.dateStr)}</span><span class="gm">${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</span><span class="gv">${esc([VENUE_ALIAS[x.venue] || x.venue, x.city].filter(Boolean).join(", "))}</span><span class="gs">${esc(x.status)}</span></button></div>`;
+    h += `<div class="grow"><input type="checkbox" data-batch="${i}" aria-label="Select this game" ${S.batch.has(i) ? "checked" : ""}><button class="game ${S.gameIdx===i?"on":""}" data-game="${i}"><span class="gd">${esc(x.dateStr)}</span><span class="gm">${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</span><span class="gv">${esc([VENUE_ALIAS[x.venue] || x.venue, x.city].filter(Boolean).join(", "))}</span><span class="gs">${esc(x.status)}</span></button></div>`;
   });
   h += `</div>`;
   if (S.gameIdx >= 0) h += `<div class="row" style="margin-top:8px"><button class="primary" id="gameConfirm" type="button">Confirm this game</button><span class="small muted">The list rolls up so you can move on.</span></div>`;
   el.innerHTML = h;
 }
 document.addEventListener("change", e => {
-  const c = e.target.closest("[data-batch]"); if (c){ S.batch = S.batch || new Set(); c.checked ? S.batch.add(+c.dataset.batch) : S.batch.delete(+c.dataset.batch); const go = $("#batchGo"); go.disabled = !S.batch.size; go.textContent = `Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)`; }
+  const c = e.target.closest("[data-batch]"); if (c){ S.batch = S.batch || new Set(); c.checked ? S.batch.add(+c.dataset.batch) : S.batch.delete(+c.dataset.batch);
+    if (c.checked && S.batch.size === 1 && S.gameIdx !== +c.dataset.batch) return pickGame(+c.dataset.batch).then(renderGames);   /* one box selected = that game is picked, so Confirm shows */
+    const go = $("#batchGo"); go.disabled = !S.batch.size; go.textContent = `Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)`; }
 });
 document.addEventListener("input", e => { if (e.target.id === "batchLead") S.batchLead = e.target.value; });
 document.addEventListener("click", e => {
   const t = e.target;
   if (t.id === "gameConfirm"){ S.gameConfirmed = true; recentTeams.add(S.sides); venueMemory.put(S.game.venue, S.game.city, S.game.state); renderGames(); return; }
   if (t.id === "gameChange"){ S.gameConfirmed = false; renderGames(); return; }
-  if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => t.dataset.bsel === "all" || compId(evInfo(S.games[i]).home) === String(a.team.id))); renderGames(); return; }
+  if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => t.dataset.bsel === "all" || (compId(evInfo(S.games[i]).home) === String(a.team.id)) === (t.dataset.bsel === "home"))); renderGames(); return; }
   if (t.id === "batchGo") exportBatch();
 });
 // Batch: make the template, ingest name and code file for every ticked game, then hand back one .zip.
@@ -1610,6 +1626,8 @@ function setCustomUI(){
   $("#gHome").closest("label").classList.toggle("hidden", ov);
   $("#gArenaAbbr").closest("label").classList.toggle("hidden", ov);     // venue abbreviation is for games only
   $("#gSeasonType").closest("label").classList.toggle("hidden", ov);    // so is season type
+  $("#gMySide").closest("label").classList.toggle("hidden", ov);        // home / away and "against" wording are game-day only
+  $("#wordingRow").classList.toggle("hidden", ov);
   if (custom) $("#gameList").innerHTML = `<div class="small muted">Custom ${esc(ov ? overviewSubject().kind.toLowerCase() : "game")}: fill in the date, venue, city and state below.</div>`;
 }
 function showCustomFields(){
@@ -2174,7 +2192,7 @@ function keywordList(){
   const year = (g.date || "").slice(0,4), season = seasonName(a.L, g.date);
   // City = the first part of the team name as ESPN gives it ("Golden State", "Atlanta", "New Jersey").
   // The game's own city is added after the home team's when it's different (Valkyries at home: "Golden State", "San Francisco").
-  const team = s => s ? [ (s.team.abbr||"").toUpperCase(), s.teamName, s.team.loc ] : [];
+  const team = s => s ? [ (s.team.abbr||"").toUpperCase(), s.teamName, s.team.loc, s.team.nick ] : [];
   // Added after your 13: sport ("Basketball", "Women's Basketball"), event / round ("WNBA Finals", "Game 6"), state + country.
   const sport = SPORT[sportOf(a.L)] || "", women = /wnba|nwsl|womens/.test(a.L.k) ? `Women's ${sport}` : "";
   const ev = String(g.event||"").replace(/^\d{4}(-\d{2})?\s+/, "").replace(new RegExp(`^${(a.L.n||"").replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}\\s+(Regular Season|Season|Preseason)\\s*`), "").replace(/^(Regular Season|Season|Preseason)$/, "").trim();
@@ -2262,7 +2280,7 @@ function xmpText(){
   const credit = creditLine(), year = (g.date || new Date().toISOString()).slice(0,4);
   const owner = CFG.copyrightOwner || "client", holder = owner === "photographer" ? photog : owner === "client" ? (client || photog) : "";
   const copyright = holder ? `© ${year} ${holder}` : "";
-  const writers = (CFG.writers || "").trim() || photog, photogTitle = (CFG.photogTitle || "").trim();
+  const writers = (CFG.writers || "").trim() || photog, photogTitle = (CFG.photogTitle || "").trim() || "Photographer";
   const eventName = $("#eventOut").value;
   const li = v => `     <rdf:li>${x(v)}</rdf:li>`;
   // Photo Mechanic field codes (IPTC IIM record:dataset). Date Created (0x237) is left out on purpose so the camera's
@@ -2559,6 +2577,7 @@ document.addEventListener("input", e=>{
   if (d.col){ CFG[d.col][+d.i] = t.value; saveCfg(); updateExamples(); return renderOut(); }
   if (t.id==="delim"){ CFG.delim = t.value || "/"; saveCfg(); return renderCols(), renderCaption(); }
   if (t.id==="gPhotog" || t.id==="gClient"){ CFG[t.id==="gPhotog" ? "photographer" : "client"] = t.value.trim(); saveCfg(); renderCaption(); renderOut(); return updateExamples(); }
+  if (t.id==="gCrew"){ CFG.crew = t.value; saveCfg(); return; }
   if (t.id==="kwExtra"){ S.game.kwExtra = t.value; return renderKeywords(); }
   if (t.id==="gPhotogTitle" || t.id==="gWriters"){ CFG[t.id==="gPhotogTitle" ? "photogTitle" : "writers"] = t.value.trim(); saveCfg(); return; }
   if (t.id==="phraseBox"){ const a = S.sides[0]; if (!a) return; CFG.phraseText = CFG.phraseText || {}; CFG.phraseText[sportOf(a.L)] = t.value; saveCfg(); return renderOut(); }
@@ -2673,7 +2692,7 @@ $("#leagueSel").innerHTML = `<option value="">Any league</option>` + LEAGUES.map
 $("#delim").value = CFG.delim;
 CFG.client = ""; saveCfg();   // client/agency starts blank every visit; only the photographer name is remembered
 $("#gPhotog").value = CFG.photographer || ""; $("#gClient").value = "";
-$("#gPhotogTitle").value = CFG.photogTitle || ""; $("#gWriters").value = CFG.writers || ""; $("#gCopy").value = CFG.copyrightOwner || "client";
+$("#gPhotogTitle").value = CFG.photogTitle || ""; $("#gCrew").value = CFG.crew || ""; $("#gWriters").value = CFG.writers || ""; $("#gCopy").value = CFG.copyrightOwner || "client";
 $("#gStyle").value = STYLES[CFG.style] ? CFG.style : "getty";
 $("#browseDate").value = new Date().toISOString().slice(0,10);
 $("#ascii").checked = !!CFG.ascii;
@@ -2719,6 +2738,8 @@ async function saveToBoard(opts = {}){
       j.crewFiles = crew.map(n => { put(n); renderAll(); return { name:n, xmp:{ name:xmpFileName(), text:xmpText() }, filename:ingestName() }; });
       put(lead); renderAll();
     }
+    const more = crewTemplates().filter(c => !(j.crewFiles || []).some(x => x.name === c.name));
+    if (more.length) j.crewFiles = [...(j.crewFiles || []), ...more];
     const w = await fetch("/api/jobs", { method:"PUT", headers:H, body:JSON.stringify({ jobs, seen }) });
     if (!w.ok) throw new Error(w.status);
     if (opts.draft) return "saved";
@@ -2755,19 +2776,36 @@ document.addEventListener("change", e => {
   if (full !== raw){ e.target.value = full; e.target.dispatchEvent(new Event("input", { bubbles:true })); }
   if (known){ const put = (id, v) => { const el = $("#" + id); if (!el.value.trim()){ el.value = v; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
     put("gCity", known.city); put("gState", known.state); $("#venueOut").textContent = " Filled from your saved venues."; }
+  else if (full && !$("#gCity").value.trim()) findVenue();   // nothing saved: look it up without a click
 });
+const GOOGLE_KEY = "AIzaSyBTQt4OYzKIPVZj94sRJ4qvtzZegwm07BU";   // restricted to ashergreenephoto.netlify.app. Forks: your own key, or "" for the free lookup only.
+async function googleVenue(q){
+  const r = await fetch("https://places.googleapis.com/v1/places:searchText", { method:"POST",
+    headers:{ "Content-Type":"application/json", "X-Goog-Api-Key":GOOGLE_KEY, "X-Goog-FieldMask":"places.displayName,places.addressComponents" },
+    body: JSON.stringify({ textQuery:q, pageSize:1, languageCode:"en" }) });
+  if (!r.ok) throw new Error(r.status);
+  const p = ((await r.json()).places || [])[0]; if (!p) return null;
+  const c = t => (p.addressComponents || []).find(a => a.types.includes(t)) || {};
+  return { name:p.displayName?.text || "", city:c("locality").longText || c("postal_town").longText || c("sublocality").longText || "",
+    state: c("country").shortText === "US" ? c("administrative_area_level_1").longText || "" : c("administrative_area_level_1").longText || c("country").longText || "" };
+}
 async function findVenue(){
   const name = $("#gVenue").value.trim(), out = $("#venueOut"); if (!name){ out.textContent = " Type the venue first."; return; }
   out.textContent = " Looking up…";
+  if (GOOGLE_KEY && /netlify\.app$/.test(location.hostname)) try {
+    const g = await googleVenue(name);
+    if (g?.city){ const put = (id, val) => { const el = $("#" + id); if (val && !el.value.trim()){ el.value = val; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
+      put("gCity", g.city); put("gState", g.state); out.textContent = ` Found on Google: ${g.name} · ${[g.city, g.state].filter(Boolean).join(", ")}. Check it.`; return; }
+  } catch(e){}   // Google off or over its limit: free Wikidata lookup below
   const api = q => fetch("https://www.wikidata.org/w/api.php?" + new URLSearchParams({ ...q, format:"json", origin:"*" })).then(r => r.json());
   const label = async id => { const d = await api({ action:"wbgetentities", ids:id, props:"labels|claims", languages:"en" }); return d.entities?.[id]; };
   try {
     const hits = (await api({ action:"wbsearchentities", search:name, language:"en", type:"item", limit:"7" })).search || [];
     const PLACE = /arena|stadium|field|park|center|centre|coliseum|gym|hall|theat|venue|ballpark|complex|dome|pavilion|court|rink|club|hotel|church|chapel|museum|farm|studio|auditorium|amphitheat/i;
     const hit = hits.find(h => PLACE.test(h.description || "")) || hits[0];
-    if (!hit){ out.textContent = " Not found on Wikidata. Type the city and state."; return; }
+    if (!hit) return osmVenue(name);
     const v = await label(hit.id), inId = v?.claims?.P131?.[0]?.mainsnak?.datavalue?.value?.id;
-    if (!inId){ out.textContent = ` Found “${hit.label}”, but no city is listed. Type it in.`; return; }
+    if (!inId) return osmVenue(name);
     const place = await label(inId), stId = place?.claims?.P131?.[0]?.mainsnak?.datavalue?.value?.id;
     let city = place?.labels?.en?.value || "", state = stId ? (await label(stId))?.labels?.en?.value || "" : "";
     if (/county/i.test(state)){ const c = await label(stId), up = c?.claims?.P131?.[0]?.mainsnak?.datavalue?.value?.id; if (up) state = (await label(up))?.labels?.en?.value || state; }   // city → county → state
@@ -2780,7 +2818,21 @@ async function findVenue(){
     const put = (id, val) => { const el = $("#" + id); if (val && !el.value.trim()){ el.value = val; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
     put("gCity", city); put("gState", state);
     out.textContent = ` Found: ${hit.label}${hit.description ? " (" + hit.description + ")" : ""} · ${[city, state].filter(Boolean).join(", ")}. Check it.`;
-  } catch(e){ out.textContent = " Couldn't reach Wikidata. Type the city and state."; }
+  } catch(e){ return osmVenue(name); }
+}
+// Last free try: OpenStreetMap (good for restaurants, hotels, studios Wikidata doesn't know).
+async function osmVenue(name){
+  const out = $("#venueOut");
+  try {
+    const q = " " + norm(name) + " ", words = n => norm(n || "").split(" ").filter(w => w.length > 2);
+    const ok = p => { const w = words(p.name); return w.length >= 1 && w.every(x => q.includes(" " + x + " ")) && w.join("").length >= 6; };   // every word of its name is in what you typed
+    const f = ((await (await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(name)}&limit=8&lang=en`)).json()).features || []).map(x => x.properties).find(ok);
+    if (!f?.city && !f?.state){ out.textContent = " Not found. Type the city and state."; return; }
+    const put = (id, val) => { const el = $("#" + id); if (val && !el.value.trim()){ el.value = val; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
+    const state = f.countrycode === "US" ? f.state : (f.state || f.country);
+    put("gCity", f.city || f.county || ""); put("gState", state || "");
+    out.textContent = ` Found on OpenStreetMap: ${f.name || name} · ${[f.city, state].filter(Boolean).join(", ")}. Check it.`;
+  } catch(e){ out.textContent = " Couldn't look it up. Type the city and state."; }
 }
 document.addEventListener("click", e => { if (e.target.id === "venueFind") findVenue(); });
 listVenues();
@@ -2865,6 +2917,33 @@ document.addEventListener("submit", e => {
   PROFILES.save(name, fresh); PROFILES.use(fresh); switching = true; location.reload();
 });
 listProfiles();
+
+/* ---------- Make more: another shoot, crew templates, season ---------- */
+function crewList(){ return String(CFG.crew || "").split(/\n+/).map(l => { const [name, ...t] = l.split(","); return { name:(name || "").trim(), title:t.join(",").trim() }; }).filter(c => c.name); }
+// Swap one photographer in (name + title), read their template and file name, swap back.
+function crewTemplates(){
+  const keep = { p:CFG.photographer, t:CFG.photogTitle, ing:$("#ingestOut").value }, out = [];
+  for (const c of crewList()){ CFG.photographer = c.name; CFG.photogTitle = c.title; renderAll();
+    out.push({ name:c.name, xmp:{ name:xmpFileName(), text:xmpText() }, filename:ingestName() }); }
+  CFG.photographer = keep.p; CFG.photogTitle = keep.t; renderAll(); $("#ingestOut").value = keep.ing;
+  return out;
+}
+document.addEventListener("click", async e => {
+  const id = e.target.id, out = $("#moreOut"); if (!/^more/.test(id) || !out) return;
+  if (id === "moreAnother"){ location.href = location.pathname + "?another=1"; }
+  if (id === "moreSeason"){ if (!S.games?.length){ out.textContent = "Search a team first; its season shows in Step 2."; return; }
+    S.gameConfirmed = false; renderGames(); $("#gameList").scrollIntoView({ behavior:"smooth", block:"start" }); }
+  if (id === "moreCrew"){
+    if (!crewList().length){ out.textContent = "Add the other photographers in Step 2 (one per line: Name, Title)."; $("#gCrew").focus(); return; }
+    if (!S.sides[0] && !S.custom){ out.textContent = "Build the template first."; return; }
+    if (!window.JSZip) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+    const zip = new JSZip(), all = [{ name:CFG.photographer, xmp:{ name:xmpFileName(), text:xmpText() }, filename:$("#ingestOut").value.trim() || ingestName() }, ...crewTemplates()];
+    all.forEach(c => { const dir = zip.folder(c.name.replace(/[\/:]/g, "-") || "Photographer"); dir.file(c.xmp.name, c.xmp.text); dir.file("Ingest file name.txt", c.filename); });
+    const blob = await zip.generateAsync({ type:"blob" }), a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = xmpFileName().replace(/\.XMP$/i, "") + " - crew.zip"; a.click();
+    out.textContent = `Done: ${all.length} templates (${all.map(c => c.name).join(", ")}).`;
+  }
+});
 
 // Short link from the booking email: index.html?ref=K7Q2M9. The details come from the job board.
 async function loadRef(ref){
@@ -2976,7 +3055,7 @@ async function tryWork(i){ $("#findPanel").hidden = false;
   if (w.q){
     $("#customPanel").classList.add("hidden");
     $("#q").value = w.q;
-    if (w.gallery) openGallery(w); else $("#step1").scrollIntoView({ behavior:"smooth" });   // gallery shows at once; the game loads behind it
+    if (w.gallery) openGallery(w);   // gallery shows at once; the game loads behind it
     await search();
     if (w.gallery && !w.on){ for (let t = 0; t < 60 && !(S.games && S.games.length); t++) await new Promise(r => setTimeout(r, 250)); }
     if (w.on){   // open the game played on that (US) date, if the search listed it
@@ -2986,6 +3065,7 @@ async function tryWork(i){ $("#findPanel").hidden = false;
       const k = S.games.findIndex(e => Math.abs(new Date(e.date) - target) < 14 * 3600e3);
       if (k >= 0) await pickGame(k);
     }
+    if (!w.gallery) showTemplate();
     if (w.gallery){ for (let t = 0; t < 40 && !(S.sides && S.sides[0] && S.sides[1] && $("#ingestOut").value && !/^YYYY/.test($("#ingestOut").value)); t++) await new Promise(r => setTimeout(r, 250)); renderAll(); if (!$("#gallery").hidden && GAL && GAL.w === w) refreshGallery(); }
     return;
   }
@@ -2996,8 +3076,9 @@ async function tryWork(i){ $("#findPanel").hidden = false;
   S.prefill = { date:c.date, venue:c.venue, city:c.city, state:c.state };
   if (w.gallery) openGallery(w);
   await startCustom();
-  if (w.gallery && !$("#gallery").hidden) refreshGallery();
+  if (w.gallery && !$("#gallery").hidden) refreshGallery(); else if (!w.gallery) showTemplate();
 }
+function showTemplate(){ setTimeout(() => document.querySelector(".capbox")?.scrollIntoView({ behavior:"smooth", block:"start" }), 150); }
 $("#showcase").addEventListener("click", e => {
   const f = e.target.closest("[data-wf]"); if (f) return renderWork(f.dataset.wf);
   const t = e.target.closest("[data-try]") || e.target.closest(".work[data-wi]"); if (t) tryWork(+(t.dataset.try ?? t.dataset.wi));
@@ -3087,29 +3168,30 @@ function renderGallery(){
   const shown = w.gallery.photos.map((p, i) => ({ p, i, m: GAL.meta[i] })).filter(({ p, m }) =>
     (filter === "All" || p.cat === filter) && (!Q || [m.caption, ...m.kws].join(" ").toLowerCase().includes(Q)));
   $("#galCount").textContent = `${shown.length} of ${w.gallery.photos.length}`;
-  $("#galGrid").innerHTML = shown.length ? shown.map(({ p, i }) => `<button class="gp ${GAL.sel === i ? "on" : ""}" data-gp="${i}" type="button" style="flex:${p.r || 1.5} 1 calc(var(--h, 220px) * ${p.r || 1.5})">
+  $("#galGrid").innerHTML = shown.length ? shown.map(({ p, i }) => `<button class="gp ${GAL.sel === i ? "on" : ""}" data-gp="${i}" type="button" style="--r:${p.r || 1.5};flex:${p.r || 1.5} 1 calc(var(--h, 220px) * ${p.r || 1.5})">
     <div class="im">${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.who || p.cat)}" loading="lazy">` : "Photo " + (i + 1)}<span class="tag">${esc(p.type || shootType(w))}</span></div>
     <div class="lb"><b>${esc((p.who || p.cat).replace(/ #.*$/, ""))}</b>${p.fromFile ? "" : esc(p.what || "")}</div></button>`).join("")
     : `<div class="gal-empty">No photos match “${esc(q)}”. Try a player, a sponsor or a type of shot.</div>`;
 }
 function showGalPhoto(i){
-  GAL.sel = i; renderGallery();
+  GAL.sel = i; document.querySelectorAll("#galGrid [data-gp]").forEach(b => b.classList.toggle("on", +b.dataset.gp === i));
   const p = GAL.w.gallery.photos[i], m = GAL.meta[i], Q = GAL.q.trim().toLowerCase();
   const hl = s => { const e = esc(s); return Q ? e.replace(new RegExp(`(${Q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig"), "<mark>$1</mark>") : e; };
   const d = $("#galDetail"); d.hidden = false;
-  d.innerHTML = `<div><div class="im">${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.who || p.cat)}">` : "Photo " + (i + 1) + " goes here"}</div>
+  d.innerHTML = `<div style="grid-column:1/-1"><button class="small" type="button" id="galBack">↑ Back to the photos</button></div><div><div class="im">${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.who || p.cat)}">` : "Photo " + (i + 1) + " goes here"}</div>
       <h3 style="margin-top:14px">Caption</h3><div class="capt">${hl(m.caption)}</div>
       ${p.noSubject ? `<p class="small muted" style="margin:6px 0 0">This frame kept the template caption as delivered: no player code was typed after the dateline, so it reads "during the … match".</p>` : ""}
       ${p.file ? `<h3 style="margin-top:14px">File</h3><div class="capt" title="${esc(p.file)}" style="font-family:var(--mono);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.file)}</div>` : ""}
       ${(p.head || GAL.w.gallery.headline) ? `<h3 style="margin-top:14px">Headline</h3><div class="capt">${esc(p.head || GAL.w.gallery.headline)}</div>` : ""}</div>
     <div>${(p.ev || GAL.w.gallery.event) ? `<h3>Event</h3><div class="capt" style="margin-bottom:14px">${esc(p.ev || GAL.w.gallery.event)}</div>` : ""}<h3>Keywords</h3><ul class="kwr">${m.kws.map(k => `<li><b>${hl(k)}</b><span>${esc(kwReason(k))}</span></li>`).join("")}</ul></div>`;
-  d.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  d.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function closeGallery(){ $("#gallery").hidden = true; document.body.classList.remove("noscroll"); }
 $("#gallery").addEventListener("click", e => {
   const f = e.target.closest("[data-gf]"); if (f){ GAL.filter = f.dataset.gf; document.querySelectorAll("#galFilter button").forEach(b => b.setAttribute("aria-pressed", b === f)); return renderGallery(); }
   const p = e.target.closest("[data-gp]"); if (p) return showGalPhoto(+p.dataset.gp);
   if (e.target.id === "galClose") return closeGallery();
+  if (e.target.id === "galBack") return document.querySelector(`#galGrid [data-gp="${GAL.sel}"]`)?.scrollIntoView({ behavior:"smooth", block:"center" });
   if (e.target.id === "galBuilder"){ closeGallery(); $("#q").value = ""; $("#step1").scrollIntoView({ behavior:"smooth" }); setTimeout(() => $("#q").focus({ preventScroll:true }), 400); }   // start your own shoot
 });
 $("#galSearch").addEventListener("input", e => { GAL.q = e.target.value; renderGallery(); if (GAL.sel >= 0) showGalPhoto(GAL.sel); });
