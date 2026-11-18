@@ -246,12 +246,15 @@ body.noscroll{overflow:hidden}
 .seg{min-width:0}.seg code{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gal-tools{display:none!important}   /* galleries show just the photos; click one for its metadata */
 .owner{position:relative;display:inline-block}.owner-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}.owner-menu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}.owner-menu a:hover{background:var(--soft)}
+.tabs{display:inline-flex;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.site nav .tabs a{padding:6px 12px;color:var(--muted);font-weight:600}.site nav .tabs a[aria-current]{color:var(--ink)}.site nav{align-items:center}
+@media (max-width:640px){header.site{flex-wrap:wrap;gap:10px}.site nav{flex-wrap:wrap;gap:10px}.site nav .ext{display:none}}
 </style>
 </head>
 <body>
 <header class="site">
   <a class="brand" href="https://ashergreenephoto.com" target="_blank" rel="noopener" aria-label="ASHE, ashergreenephoto.com"><span class="logo">ASHE<sup>®</sup></span><span class="divider" aria-hidden="true"></span><span class="wordmark">Metadata Template Builder</span></a>
-  <nav><button id="showIntro" type="button">How it works</button><span class="owner"><button id="ownerBtn" type="button" aria-expanded="false" aria-controls="ownerMenu">Owner access</button><span id="ownerMenu" class="owner-menu" hidden><a href="index.html">Metadata builder</a><a href="booking.html">Booking form</a><a href="board.html">Job board</a></span></span><a href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></nav>
+  <nav><button id="showIntro" type="button">How it works</button><span class="tabs" role="navigation" aria-label="Pages"><a href="index.html" aria-current="page">Builder</a><a href="booking.html">Booking</a><a href="board.html">Job board</a></span><a class="ext" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></nav>
 </header>
 <main id="top">
   <section class="hero">
@@ -2506,13 +2509,6 @@ async function loadBooking(code){
   if (!seen) $("#intro").classList.remove("hidden");
   $("#introDone").addEventListener("click", () => { $("#intro").classList.add("hidden"); try { localStorage.setItem("rcb.introSeen", "1"); } catch(e){} });
   $("#showIntro").addEventListener("click", () => { $("#intro").classList.remove("hidden"); $("#intro").scrollIntoView({ behavior:"smooth", block:"center" }); });
-})();
-// Owner access: one menu to the three pages (the job board's data is locked with your passcode)
-(() => {
-  const btn = $("#ownerBtn"), menu = $("#ownerMenu");
-  btn.addEventListener("click", e => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute("aria-expanded", String(!menu.hidden)); });
-  document.addEventListener("click", e => { if (!e.target.closest(".owner")){ menu.hidden = true; btn.setAttribute("aria-expanded", "false"); } });
-  document.addEventListener("keydown", e => { if (e.key === "Escape"){ menu.hidden = true; btn.setAttribute("aria-expanded", "false"); } });
 })();
 /* ---------- Work showcase (draft) ----------
    Edit this list to change the cards. For each one:

@@ -54,11 +54,13 @@ button:disabled{opacity:.6;cursor:default}
 #vlist li[aria-selected=true],#vlist li:hover{background:var(--bg)}
 @media (max-width:600px){.grid{grid-template-columns:1fr}.types{grid-template-columns:1fr 1fr}}
 .owner{position:relative;display:inline-block}.owner>button{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer}.owner-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}.owner-menu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}.owner-menu a:hover{background:var(--soft,var(--bg))}.owner-menu a[aria-current]{font-weight:700}.owner-menu[hidden]{display:none}
+.tabs{display:inline-flex;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+@media (max-width:640px){header{flex-wrap:wrap;gap:10px}header .ext{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><span style="display:flex;gap:12px;align-items:center"><span class="owner"><button id="ownerBtn" type="button" aria-expanded="false" aria-controls="ownerMenu">Owner access</button><span id="ownerMenu" class="owner-menu" hidden><a href="index.html">Metadata builder</a><a href="booking.html" aria-current="page">Booking form</a><a href="board.html">Job board</a></span></span><a class="small" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></span></header>
+  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><span style="display:flex;gap:12px;align-items:center"><nav class="tabs" aria-label="Pages"><a href="index.html">Builder</a><a href="booking.html" aria-current="page">Booking</a><a href="board.html">Job board</a></nav><a class="small ext" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></span></header>
 
   <div id="formView">
   <h1>Book a shoot</h1>
@@ -268,8 +270,5 @@ F.addEventListener("submit", async e => {
   if (!sent){ $("#localNote").hidden = false; $("#openBuilder").href = link; }
 });
 </script>
-<script>(() => { const b = document.getElementById("ownerBtn"), m = document.getElementById("ownerMenu"), shut = () => { m.hidden = true; b.setAttribute("aria-expanded", "false"); };
-  b.addEventListener("click", e => { e.stopPropagation(); m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); });
-  document.addEventListener("click", e => { if (!e.target.closest(".owner")) shut(); }); document.addEventListener("keydown", e => { if (e.key === "Escape") shut(); }); })();</script>
 </body>
 </html>

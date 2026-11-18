@@ -76,11 +76,13 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
 .note{font-size:12px;color:var(--muted)}
 @media (max-width:700px){.cal{padding:8px}.grid7{gap:2px}.calhead b{min-width:0;font-size:14px}.fg{grid-template-columns:1fr}.day{min-height:64px}.ev{font-size:10px}}
 .owner{position:relative;display:inline-block}.owner>button{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer}.owner-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}.owner-menu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}.owner-menu a:hover{background:var(--soft,var(--bg))}.owner-menu a[aria-current]{font-weight:700}.owner-menu[hidden]{display:none}
+.tabs{display:inline-flex;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+@media (max-width:640px){header{flex-wrap:wrap;gap:10px}header .ext{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><nav><span class="owner"><button id="ownerBtn" type="button" aria-expanded="false" aria-controls="ownerMenu">Owner access</button><span id="ownerMenu" class="owner-menu" hidden><a href="index.html">Metadata builder</a><a href="booking.html">Booking form</a><a href="board.html" aria-current="page">Job board</a></span></span></nav></header>
+  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><nav><nav class="tabs" aria-label="Pages"><a href="index.html">Builder</a><a href="booking.html">Booking</a><a href="board.html" aria-current="page">Job board</a></nav></nav></header>
 
   <div class="top">
     <div><h1>Job board</h1><p class="sub" id="summary"></p></div>
@@ -436,8 +438,5 @@ $("#lockForm").addEventListener("submit", e => { e.preventDefault(); try { local
 
 render(); sync();
 </script>
-<script>(() => { const b = document.getElementById("ownerBtn"), m = document.getElementById("ownerMenu"), shut = () => { m.hidden = true; b.setAttribute("aria-expanded", "false"); };
-  b.addEventListener("click", e => { e.stopPropagation(); m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); });
-  document.addEventListener("click", e => { if (!e.target.closest(".owner")) shut(); }); document.addEventListener("keydown", e => { if (e.key === "Escape") shut(); }); })();</script>
 </body>
 </html>
