@@ -436,7 +436,8 @@ body.noscroll{overflow:hidden}
         <div class="panel">
           <h2 style="margin:0">Metadata template</h2>
           <p class="small muted">Image ▸ Metadata Template… ▸ Load, then apply it on ingest. Sets the caption, headline, event, place, credit, copyright and keywords.</p>
-          <button class="primary" id="dlXmp">Download template (.XMP)</button>
+          <div class="row" style="gap:8px;flex-wrap:wrap"><button class="primary" id="dlXmp">Download template (.XMP)</button><button class="primary" id="dlCrew" hidden>Download all photographer templates (.zip)</button></div>
+          <div class="small muted" id="dlCrewOut"></div>
         </div>
         <div class="panel">
           <h2 style="margin:0">Ingest file name</h2>
@@ -977,14 +978,19 @@ function renderGames(){
   const el = $("#gameList"), [a,b] = S.sides; S.batch = S.batch || new Set();
   const who = b && !b.fromGame ? `${a.teamName} and ${b.teamName}` : a.teamName;
   if (!S.games.length){ el.innerHTML = `<div class="small muted">No games for ${esc(who)} found on ESPN's schedule. Enter the details below.</div>`; return; }
+  const dl = $("#dlXmp"); if (dl) dl.textContent = S.multi && S.gameConfirmed ? `Download ${S.batch.size} templates (.zip)` : "Download template (.XMP)";
+  if (S.gameConfirmed && S.multi){
+    const days = [...S.batch].sort((x, y) => x - y).map(i => evInfo(S.games[i]));
+    el.innerHTML = `<div class="confirmed"><span>✓ <b>${S.batch.size} games</b> · ${esc(days[0].dateStr)} to ${esc(days[days.length - 1].dateStr)}<br><span class="small muted">Steps 3 and 4 show the first one; the same settings go on every game.</span></span><button class="small" id="gameChange" type="button">Change games</button></div><div id="batchOut" class="small muted"></div>`; return;
+  }
   if (S.gameConfirmed && S.gameIdx >= 0){   // confirmed: the list rolls up to one line
     const x = evInfo(S.games[S.gameIdx]);
     el.innerHTML = `<div class="confirmed"><span>✓ <b>${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</b> · ${esc(x.dateStr)}</span><button class="small" id="gameChange" type="button">Change game</button></div>`; return;
   }
   let h = `<div class="small muted" style="margin-bottom:6px">Pick the game you're shooting (${S.games.length} found for ${esc(who)}), or select several to make them all at once.</div>
-    <div class="batchbar"><button class="small" type="button" data-bsel="home">Select ${esc(a.teamName)} home games</button><button class="small" type="button" data-bsel="away">Select away games</button><button class="small" type="button" data-bsel="all">Select all</button><button class="small" type="button" data-bsel="none">Clear</button>
+    <div class="batchbar"><button class="small" type="button" data-bsel="home">Select upcoming ${esc(a.teamName)} home games</button><button class="small" type="button" data-bsel="away">Upcoming away games</button><button class="small" type="button" data-bsel="all">All upcoming</button><button class="small" type="button" data-bsel="none">Clear</button>
     <input id="batchLead" type="text" placeholder="Optional caption lead: The {away} play the {home} in a {sport} game" value="${esc(S.batchLead || "")}">
-    <button class="primary small" type="button" id="batchGo" ${S.batch.size ? "" : "disabled"}>Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)</button></div><div id="batchOut" class="small muted"></div><div class="games">`;
+    </div><div id="batchOut" class="small muted"></div><div class="games">`;
   S.games.forEach((e,i)=>{
     if (i===0 && S.upCount) h += `<div class="ghead">Upcoming</div>`;
     if (i===S.upCount) h += `<div class="ghead">Past</div>`;
@@ -992,25 +998,33 @@ function renderGames(){
     h += `<div class="grow"><input type="checkbox" data-batch="${i}" aria-label="Select this game" ${S.batch.has(i) ? "checked" : ""}><button class="game ${S.gameIdx===i?"on":""}" data-game="${i}"><span class="gd">${esc(x.dateStr)}</span><span class="gm">${esc(x.away.team?.displayName)} at ${esc(x.home.team?.displayName)}</span><span class="gv">${esc([VENUE_ALIAS[x.venue] || x.venue, x.city].filter(Boolean).join(", "))}</span><span class="gs">${esc(x.status)}</span></button></div>`;
   });
   h += `</div>`;
-  if (S.gameIdx >= 0) h += `<div class="row" style="margin-top:8px"><button class="primary" id="gameConfirm" type="button">Confirm this game</button><span class="small muted">The list rolls up so you can move on.</span></div>`;
+  const many = S.batch.size > 1;
+  if (S.gameIdx >= 0 || many) h += `<div class="row" style="margin-top:8px"><button class="primary" id="gameConfirm" type="button">${many ? `Confirm these ${S.batch.size} games` : "Confirm this game"}</button>${many ? `<span class="small muted">Then check the caption in Step 3; Step 4 makes all ${S.batch.size} templates.</span>` : ""}<span class="small muted">The list rolls up so you can move on.</span></div>`;
   el.innerHTML = h;
 }
 document.addEventListener("change", e => {
   const c = e.target.closest("[data-batch]"); if (c){ S.batch = S.batch || new Set(); c.checked ? S.batch.add(+c.dataset.batch) : S.batch.delete(+c.dataset.batch);
     if (c.checked && S.batch.size === 1 && S.gameIdx !== +c.dataset.batch) return pickGame(+c.dataset.batch).then(renderGames);   /* one box selected = that game is picked, so Confirm shows */
-    const go = $("#batchGo"); go.disabled = !S.batch.size; go.textContent = `Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)`; }
+    renderGames(); const go = { set disabled(v){}, set textContent(v){} }; go.disabled = !S.batch.size; go.textContent = `Make ${S.batch.size || ""} template${S.batch.size === 1 ? "" : "s"} (.zip)`; }
 });
 document.addEventListener("input", e => { if (e.target.id === "batchLead") S.batchLead = e.target.value; });
-document.addEventListener("click", e => {
+document.addEventListener("click", e => {   // a game that already happened: ask first
+  const b = e.target.closest("[data-game],[data-batch]"); if (!b) return;
+  const i = +(b.dataset.game ?? b.dataset.batch); if (i < S.upCount || (b.dataset.batch !== undefined && !b.checked)) return;
+  if (!confirm(`Heads up: this game already happened (${evInfo(S.games[i]).dateStr}). Use it anyway?`)){ e.preventDefault(); e.stopPropagation(); }
+}, true);
+document.addEventListener("click", async e => {
   const t = e.target;
-  if (t.id === "gameConfirm"){ S.gameConfirmed = true; recentTeams.add(S.sides); venueMemory.put(S.game.venue, S.game.city, S.game.state); renderGames(); return; }
-  if (t.id === "gameChange"){ S.gameConfirmed = false; renderGames(); return; }
-  if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => t.dataset.bsel === "all" || (compId(evInfo(S.games[i]).home) === String(a.team.id)) === (t.dataset.bsel === "home"))); renderGames(); return; }
+  if (t.id === "gameConfirm"){ S.multi = S.batch.size > 1;
+    if (S.multi && !S.batch.has(S.gameIdx)){ S.gameConfirmed = false; await pickGame(Math.min(...S.batch)); }
+    S.gameConfirmed = true; recentTeams.add(S.sides); venueMemory.put(S.game.venue, S.game.city, S.game.state); renderGames(); return; }
+  if (t.id === "gameChange"){ S.gameConfirmed = false; S.multi = false; renderGames(); return; }
+  if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => i < S.upCount).filter(i => t.dataset.bsel === "all" || (compId(evInfo(S.games[i]).home) === String(a.team.id)) === (t.dataset.bsel === "home"))); renderGames(); return; }
   if (t.id === "batchGo") exportBatch();
 });
 // Batch: make the template, ingest name and code file for every ticked game, then hand back one .zip.
 async function exportBatch(){
-  const out = $("#batchOut"), list = [...S.batch].sort((x, y) => evInfo(S.games[x]).ymd.localeCompare(evInfo(S.games[y]).ymd)), lead = (S.batchLead || "").trim();
+  const out = $("#batchOut") || $("#toBoardOut"), list = [...S.batch].sort((x, y) => evInfo(S.games[x]).ymd.localeCompare(evInfo(S.games[y]).ymd)), lead = (S.batchLead || "").trim();
   if (!window.JSZip) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
   const zip = new JSZip(), names = [], keepTicks = new Set(S.batch), season = new Map(), clash = [];
   for (const [n, i] of list.entries()){
@@ -1026,7 +1040,7 @@ async function exportBatch(){
     }
     zip.file(xmpFileName(), xmpText());
     const codes = fileText(S.sides);
-    zip.file("Code Replacements/" + gameFileName(), codes);
+    if (i >= S.upCount) zip.file("Code Replacements/Past games/" + gameFileName(), codes);   // played: that day's roster
     // Season file: one line per code across every game. Cells that change from game to game ("during the game against …") are left blank there.
     for (const line of codes.split("\n").filter(Boolean)){
       const cells = line.split("\t"), key = cells[0], had = season.get(key);
@@ -1040,9 +1054,10 @@ async function exportBatch(){
   const year = (evInfo(S.games[list[0]]).ymd || "").slice(0, 4), teamName = S.sides[0]?.teamName || "Team";
   zip.file(`${year} ${teamName} Season_Code Replacements.txt`, [...season.values()].map(c => c.join("\t").replace(/\t+$/, "")).join("\n") + "\n");
   if (clash.length) zip.file("Code clashes to check.txt", "These codes mean different people in different games. The season file keeps the first one; use the per-game file for the others.\n\n" + clash.join("\n") + "\n");
+  const multi = S.multi; S.gameConfirmed = false; await pickGame(list[0]); S.batch = keepTicks; S.multi = multi; S.gameConfirmed = !!multi; renderGames();
   const blob = await zip.generateAsync({ type:"blob" }), a = document.createElement("a"), team = (S.sides[0]?.teamName || "Batch").replace(/\W+/g, "");
   a.href = URL.createObjectURL(blob); a.download = `${team}_${list.length} templates.zip`; document.body.appendChild(a); a.click(); a.remove();
-  S.lastBatch = blob; out.textContent = `Done: ${list.length} templates, code files and ingest names in one .zip.`;
+  S.lastBatch = blob; if (!out.isConnected) return; out.textContent = `Done: ${list.length} templates, code files and ingest names in one .zip.`;
 }
 // ESPN's venue names that need the full name in captions (add your own here).
 const VENUE_ALIAS = { "Gateway Center":"Gateway Center Arena" };
@@ -1134,7 +1149,7 @@ function readGame(){
   g.mySide = $("#gMySide").value; g.wording = $("#gWording").value;
 }
 // Shooting for one team: "home", "away", or "" (neutral). Auto matches the client to a team ("Atlanta Falcons", "Falcons", "ATL").
-document.addEventListener("change", e => { if (e.target.id === "gMySide" || e.target.id === "gWording"){ readGame(); renderAll(); } });
+document.addEventListener("change", e => { if (e.target.id === "gMySide" || e.target.id === "gWording"){ readGame(); renderTeams(); renderAll(); } });
 function mySide(){
   const g = S.game, [a, b] = S.sides; if (!a || !b) return "";
   const homeSide = S.sides[g.home] || b, awaySide = S.sides[1 - g.home] || a;
@@ -2443,6 +2458,13 @@ function renderTeams(){
   $("#teams").innerHTML = S.sides.map((s,i)=> s ? teamPanel(s,i) : "").join("");
 }
 function teamPanel(s, i){
+  const html = teamPanelHTML(s, i), mine = mySide(), client = mine === "home" ? S.sides[S.game.home] : mine === "away" ? S.sides[1 - S.game.home] : null;
+  if (!client || client === s) return html;   // no client team (Getty, AP...): both stay open
+  S.openTeams = S.openTeams || new Set();
+  return `<details class="panel" data-fold="${i}" ${S.openTeams.has(String(s.team.id)) ? "open" : ""} style="padding:0"><summary style="padding:14px 16px;cursor:pointer"><b>${esc(s.team.name)}</b> <span class="small muted">· opponent roster, tap to show</span></summary>${html.replace(/^\s*<div class="panel">/, '<div class="panel" style="border:0;margin:0">')}</details>`;
+}
+document.addEventListener("toggle", e => { const d = e.target; if (!d.dataset?.fold) return; const id = String(S.sides[+d.dataset.fold]?.team.id); S.openTeams = S.openTeams || new Set(); d.open ? S.openTeams.add(id) : S.openTeams.delete(id); }, true);
+function teamPanelHTML(s, i){
   const list = roster(s);
   const alts = (S.pairs[S.pick]?.alts[i]||[]).filter(t=>t!==s.team);
   const fetched = s.espn?.fetched ? `ESPN roster pulled ${s.espn.fetched.toLocaleString([], {dateStyle:"medium", timeStyle:"short"})}${s.espn.season?" · season "+esc(s.espn.season):""} · ${s.espn.players.length} players${s.source==="game" && s.game ? ` · <b>using the game-day roster from the ${esc(s.game.label)} box score (${s.game.players.length} players)</b>` : ""}${s.game && s.L.k.startsWith("football/") ? " · football box scores only list players with stats, so today's roster stays selected" : ""}` : "";
@@ -2532,6 +2554,7 @@ document.addEventListener("click", async e=>{
   if (t.id==="dlStruct"){ if (!S.sides[0]) return; return download(structuredKeywords(), xmpFileName().replace(/\.XMP$/, "_Structured Keywords.txt")); }
   if (t.id==="phraseReset"){ const a = S.sides[0]; if (a && CFG.phraseText) { delete CFG.phraseText[sportOf(a.L)]; saveCfg(); } $("#phraseBox").blur(); return renderAll(); }
   if (t.id==="dlBoth") return download(fileText(S.sides), gameFileName());
+  if (t.id==="dlXmp" && S.multi && S.gameConfirmed) return exportBatch();
   if (t.id==="dlXmp"){ if (!S.sides[0] && !S.custom) return; if (S.booking) saveToBoard();   // a booked job: the template also goes onto the board
     return download(xmpText(), xmpFileName()); }
   if (t.id==="dl0" || t.id==="dl1"){ const s = S.sides[+t.id.slice(2)]; return download(fileText([s]), `${s.L.n.replace(/\W+/g,"")}_${s.teamName.replace(/\W+/g,"")}_Roster.txt`); }
@@ -2576,7 +2599,7 @@ document.addEventListener("input", e=>{
   if (d.tf){ S.sides[+d.side][d.tf] = t.value.trim(); renderOut(); renderCaption(); return updateExamples(); }
   if (d.col){ CFG[d.col][+d.i] = t.value; saveCfg(); updateExamples(); return renderOut(); }
   if (t.id==="delim"){ CFG.delim = t.value || "/"; saveCfg(); return renderCols(), renderCaption(); }
-  if (t.id==="gPhotog" || t.id==="gClient"){ CFG[t.id==="gPhotog" ? "photographer" : "client"] = t.value.trim(); saveCfg(); renderCaption(); renderOut(); return updateExamples(); }
+  if (t.id==="gPhotog" || t.id==="gClient"){ CFG[t.id==="gPhotog" ? "photographer" : "client"] = t.value.trim(); saveCfg(); renderCaption(); renderOut(); if (t.id==="gClient"){ clearTimeout(S.foldT); S.foldT = setTimeout(() => { renderTeams(); renderOut(); }, 600); } return updateExamples(); }
   if (t.id==="gCrew"){ CFG.crew = t.value; saveCfg(); return; }
   if (t.id==="kwExtra"){ S.game.kwExtra = t.value; return renderKeywords(); }
   if (t.id==="gPhotogTitle" || t.id==="gWriters"){ CFG[t.id==="gPhotogTitle" ? "photogTitle" : "writers"] = t.value.trim(); saveCfg(); return; }
@@ -2919,6 +2942,22 @@ document.addEventListener("submit", e => {
 listProfiles();
 
 /* ---------- Make more: another shoot, crew templates, season ---------- */
+const showCrewBtn = () => { $("#dlCrew").hidden = !crewList().length; };
+document.addEventListener("input", e => { if (e.target.id === "gCrew") showCrewBtn(); });
+addEventListener("load", showCrewBtn);
+// One folder per photographer: their template, their ingest file name, and the code replacement file.
+document.addEventListener("click", async e => {
+  if (e.target.id !== "dlCrew") return; const out = $("#dlCrewOut");
+  if (!S.sides[0] && !S.custom){ out.textContent = "Build the template first."; return; }
+  if (!window.JSZip) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+  const codes = S.sides[0] && !isOverview() ? fileText(S.sides) : "";
+  const zip = new JSZip(), all = [{ name:CFG.photographer || "Me", xmp:{ name:xmpFileName(), text:xmpText() }, filename:$("#ingestOut").value.trim() || ingestName() }, ...crewTemplates()];
+  all.forEach(c => { const dir = zip.folder(c.name.replace(/[\/:]/g, "-"));
+    dir.file(c.xmp.name, c.xmp.text); dir.file("Ingest file name.txt", c.filename + "\n"); if (codes) dir.file(gameFileName(), codes); });
+  const blob = await zip.generateAsync({ type:"blob" }), a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = xmpFileName().replace(/\.XMP$/i, "") + " - all photographers.zip"; document.body.appendChild(a); a.click(); a.remove();
+  out.textContent = `Done: ${all.length} folders (${all.map(c => c.name).join(", ")}), each with the template, file name${codes ? " and code file" : ""}.`;
+});
 function crewList(){ return String(CFG.crew || "").split(/\n+/).map(l => { const [name, ...t] = l.split(","); return { name:(name || "").trim(), title:t.join(",").trim() }; }).filter(c => c.name); }
 // Swap one photographer in (name + title), read their template and file name, swap back.
 function crewTemplates(){
@@ -2933,7 +2972,8 @@ document.addEventListener("click", async e => {
   if (id === "moreAnother"){ location.href = location.pathname + "?another=1"; }
   if (id === "moreSeason"){ if (!S.games?.length){ out.textContent = "Search a team first; its season shows in Step 2."; return; }
     S.gameConfirmed = false; renderGames(); $("#gameList").scrollIntoView({ behavior:"smooth", block:"start" }); }
-  if (id === "moreCrew"){
+  if (id === "moreCrew"){ return $("#dlCrew").click(); }
+  if (id === "moreCrewOld"){
     if (!crewList().length){ out.textContent = "Add the other photographers in Step 2 (one per line: Name, Title)."; $("#gCrew").focus(); return; }
     if (!S.sides[0] && !S.custom){ out.textContent = "Build the template first."; return; }
     if (!window.JSZip) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
