@@ -1,0 +1,12 @@
+# Only the two sites are public. Everything else in this folder (templates, rosters, notes, tests) stays on this Mac.
+/*
+!/.gitignore
+!/README.md
+!/website/
+!/board-site/
+.DS_Store
+_test/
+*.XMP
+*.xmp
+node_modules/
+.netlify/

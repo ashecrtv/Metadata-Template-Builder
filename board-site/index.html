@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Job Board · ASHE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23121212'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Helvetica Neue,Helvetica,Arial,sans-serif' font-weight='700' font-size='42' fill='%23f6f5f0'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F5F0;--panel:#fff;--ink:#121212;--muted:#5f5f5a;--line:#dcdad2;--accent:#123122;--soft:#ecebe4;
+--s-req:#8a6d1f;--s-req-bg:#f6edd2;--s-con:#1f4f8a;--s-con-bg:#dde8f6;--s-shot:#6b3d8a;--s-shot-bg:#ece1f4;--s-del:#123122;--s-del-bg:#dcebe1;
+--sans:"Inter Tight",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:22px max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px))}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.logo{font-weight:800;letter-spacing:.02em;font-size:18px;color:var(--ink);text-decoration:none}
+.logo sup{font-size:9px}
+nav a{color:var(--muted);font-size:13px;margin-left:14px}
+h1{font-size:clamp(26px,4vw,38px);line-height:1;margin:0;font-weight:800;text-transform:uppercase;letter-spacing:-.01em}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.sub{color:var(--muted);margin:6px 0 0}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
+.seg button{background:none;color:var(--ink);padding:7px 14px;font-weight:600}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+button{font:inherit;font-weight:700;font-size:13px;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:9px 16px;cursor:pointer}
+button.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+button.danger{background:none;color:#a3271b;border:1px solid #e3c4bf}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+#q{max-width:260px}
+.spacer{flex:1}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.st-Requested{color:var(--s-req);background:var(--s-req-bg)}.st-Confirmed{color:var(--s-con);background:var(--s-con-bg)}
+.st-Shot{color:var(--s-shot);background:var(--s-shot-bg)}.st-Delivered{color:var(--s-del);background:var(--s-del-bg)}
+.tablebox{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:980px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;cursor:pointer;white-space:nowrap;user-select:none}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--bg)}
+td small{display:block;color:var(--muted)}
+.ok{color:var(--accent);font-weight:700}.miss{color:#b9b7ad}
+.cols{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;overflow-x:auto}
+.col{background:var(--soft);border-radius:12px;padding:10px;min-height:200px}
+.col h3{margin:2px 4px 10px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between}
+.col.over{outline:2px dashed var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:8px;cursor:grab}
+.card b{display:block;margin-bottom:2px}.card .m{color:var(--muted);font-size:12px}
+.card .icons{display:flex;gap:6px;margin-top:6px;font-size:11px}
+.cal{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.calhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}.calhead b{font-size:16px;text-transform:uppercase;min-width:170px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:2px 4px}
+.day{min-height:96px;border:1px solid var(--line);border-radius:8px;padding:4px;min-width:0}
+.day.out{opacity:.4}.day.today{border-color:var(--accent)}
+.day .n{font-size:11px;font-weight:700;color:var(--muted)}
+.ev{display:block;font-size:11px;border-radius:5px;padding:2px 5px;margin-top:3px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{color:var(--muted);text-align:center;padding:40px}
+dialog{border:0;border-radius:14px;padding:0;width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 24px);background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(18,18,18,.45)}
+.dlg{padding:20px}
+.dlg h2{margin:0 0 4px;font-size:20px;text-transform:uppercase}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:14px}
+.fg .full{grid-column:1/-1}
+.fg label{font-size:12px;font-weight:600;display:block;min-width:0}
+.fg label input,.fg label select,.fg label textarea{margin-top:4px}
+.sec{grid-column:1/-1;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.xmpbox{grid-column:1/-1;border:1px dashed var(--line);border-radius:10px;padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.xmpbox.over{border-color:var(--accent);background:var(--bg)}
+.foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.note{font-size:12px;color:var(--muted)}
+@media (max-width:700px){.cal{padding:8px}.grid7{gap:2px}.calhead b{min-width:0;font-size:14px}.fg{grid-template-columns:1fr}.day{min-height:64px}.ev{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a class="logo" href="https://ashergreenephoto.netlify.app/">ASHE<sup>®</sup></a><nav><a href="https://ashergreenephoto.netlify.app/booking">Booking form</a><a href="https://ashergreenephoto.netlify.app/">Metadata builder</a></nav></header>
+
+  <div class="top">
+    <div><h1>Job board</h1><p class="sub" id="summary"></p></div>
+    <div class="bar" style="margin:0">
+      <button class="ghost" id="addLink">Add from booking email</button>
+      <button id="addNew">New job</button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="View">
+      <button data-view="table" aria-pressed="true">Table</button>
+      <button data-view="board" aria-pressed="false">Status board</button>
+      <button data-view="cal" aria-pressed="false">Calendar</button>
+    </div>
+    <input id="q" type="search" placeholder="Search client, event, venue…">
+    <select id="fPhot" style="width:auto"><option value="">All photographers</option></select>
+    <span class="spacer"></span>
+    <button class="ghost" id="exportBtn">Back up</button>
+    <button class="ghost" id="importBtn">Restore</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+  </div>
+
+  <div id="view"></div>
+  <p class="note" style="margin-top:14px">Private site: only you can open it, signed in to Netlify. <span id="syncNote">Jobs are saved in this browser; use Back up to keep a copy.</span></p>
+</div>
+
+<dialog id="dlg"><form method="dialog" class="dlg" id="jobForm" novalidate>
+  <h2 id="dlgTitle">Job</h2>
+  <div class="fg">
+    <label>Status<select name="status"></select></label>
+    <label>Shoot type<select name="type"><option value="game">Gameday</option><option value="portrait">Portrait</option><option value="commercial">Commercial</option><option value="event">Event</option><option value="practice">Practice</option></select></label>
+    <label class="full">Event / project name<input name="name"></label>
+    <div class="sec">Client</div>
+    <label>Organization / client<input name="org"></label>
+    <label>Department<input name="department"></label>
+    <label>Contact name<input name="contact"></label>
+    <label>Email<input name="email" type="email"></label>
+    <label>Phone<input name="phone" type="tel"></label>
+    <label>Day-of contact<input name="dayof"></label>
+    <div class="sec">When &amp; where</div>
+    <label>Date<input name="date" type="date"></label>
+    <label>Photographer<input name="photographer" list="photList"></label>
+    <label>Start<input name="start" type="time"></label>
+    <label>End<input name="end" type="time"></label>
+    <label class="full">Duration<input name="duration"></label>
+    <label>Venue<input name="venue"></label>
+    <label>Street address<input name="address"></label>
+    <label>City<input name="city"></label>
+    <label>State<input name="state"></label>
+    <div class="sec">Deliverables</div>
+    <label>Selects / coverage<input name="coverage"></label>
+    <label>Deadline<input name="deadline"></label>
+    <label>Usage<input name="usage"></label>
+    <label>Key subjects<input name="subjects"></label>
+    <label class="full">Extra keywords<input name="keywords"></label>
+    <label class="full">Shot list / must-gets<textarea name="shotlist" rows="2"></textarea></label>
+    <label class="full">Notes<textarea name="notes" rows="2"></textarea></label>
+    <div class="sec">Delivery</div>
+    <label class="full">Gallery link<input name="gallery" type="url" placeholder="https://…"></label>
+    <div class="xmpbox" id="xmpBox">
+      <div style="flex:1;min-width:200px"><b>Metadata template</b><div class="note" id="xmpName">Drop the .XMP here, or choose it.</div></div>
+      <button type="button" class="ghost" id="xmpPick">Choose .XMP</button>
+      <button type="button" class="ghost" id="xmpGet" hidden>Download</button>
+      <button type="button" class="ghost" id="xmpDel" hidden>Remove</button>
+      <input type="file" id="xmpFile" accept=".xmp,.XMP" hidden>
+    </div>
+    <div class="xmpbox">
+      <label style="flex:1;min-width:220px;font-size:12px;font-weight:600">Ingest file name <span class="note" style="font-weight:400">(paste into Photo Mechanic → Ingest → Rename)</span><input name="filename" id="fileName" spellcheck="false" style="font-family:ui-monospace,Menlo,monospace;font-size:13px"></label>
+      <button type="button" class="ghost" id="fnCopy">Copy</button>
+      <button type="button" class="ghost" id="fnMake" title="Rebuild from the date, client, event and photographer">Rebuild</button>
+    </div>
+  </div>
+  <div class="foot">
+    <button value="save" id="saveBtn">Save</button>
+    <button type="button" class="ghost" id="toBuilder">Open in builder →</button>
+    <a class="note" id="galLink" target="_blank" rel="noopener" hidden>Open gallery ↗</a>
+    <span class="spacer"></span>
+    <button type="button" class="danger" id="delBtn">Delete job</button>
+    <button type="button" class="ghost" id="cancelBtn">Cancel</button>
+  </div>
+</form></dialog>
+
+<dialog id="linkDlg"><form method="dialog" class="dlg">
+  <h2>Add from booking email</h2>
+  <p class="note">Paste the whole booking email (select all in Gmail, copy, paste here), or just its builder link.</p>
+  <textarea id="linkIn" rows="8" style="margin-top:8px"></textarea>
+  <p class="note" id="linkErr" style="color:#a3271b"></p>
+  <div class="foot"><button value="ok" id="linkOk">Add job</button><button value="cancel" class="ghost">Cancel</button></div>
+</form></dialog>
+<datalist id="photList"></datalist>
+
+<script>
+const STATUSES = ["Requested", "Confirmed", "Shot", "Delivered"];
+const TYPES = { game:"Gameday", portrait:"Portrait", commercial:"Commercial", event:"Event", practice:"Practice" };
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]);
+const KEY = "ashe.jobs";
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch(e){ return []; } };
+let CLOUD = false, SEEN = [], pushT = 0;
+const save = () => {
+  try { localStorage.setItem(KEY, JSON.stringify(JOBS)); } catch(e){ if (!CLOUD) alertNote("Couldn't save in this browser. Use Back up."); }
+  if (CLOUD){ clearTimeout(pushT); pushT = setTimeout(() => fetch("/api/jobs", { method:"PUT", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ jobs:JOBS, seen:SEEN }) })
+    .catch(() => alertNote("Couldn't reach the server. Changes are kept in this browser for now.")), 400); }
+};
+let JOBS = load(), VIEW = "table", SORT = { k:"date", dir:1 }, CAL = new Date(), EDIT = null;
+try { VIEW = localStorage.getItem("ashe.boardView") || "table"; } catch(e){}
+const alertNote = t => { $("#summary").textContent = t; };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+const fmtDate = d => d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric", year:"numeric" }) : "No date";
+const fmtTime = t => { if (!t) return ""; const [h, m] = t.split(":").map(Number); return `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
+const when = j => [j.start && j.end ? `${fmtTime(j.start)}–${fmtTime(j.end)}` : fmtTime(j.start), j.duration].filter(Boolean).join(" · ");
+const where = j => [j.city, j.state].filter(Boolean).join(", ");
+const title = j => j.name || TYPES[j.type] || "Untitled job";
+
+function filtered(){
+  const q = $("#q").value.trim().toLowerCase(), p = $("#fPhot").value;
+  return JOBS.filter(j => (!p || j.photographer === p) && (!q || [j.org, j.name, j.venue, j.city, j.contact, j.department, j.photographer].join(" ").toLowerCase().includes(q)));
+}
+function summary(){
+  const up = JOBS.filter(j => j.date && j.date >= new Date().toISOString().slice(0, 10) && j.status !== "Delivered").length;
+  const open = JOBS.filter(j => j.status === "Requested").length;
+  $("#summary").textContent = `${JOBS.length} job${JOBS.length === 1 ? "" : "s"} · ${up} upcoming · ${open} waiting to confirm`;
+  const names = [...new Set(JOBS.map(j => j.photographer).filter(Boolean))].sort();
+  const cur = $("#fPhot").value;
+  $("#fPhot").innerHTML = `<option value="">All photographers</option>` + names.map(n => `<option${n === cur ? " selected" : ""}>${esc(n)}</option>`).join("");
+  $("#photList").innerHTML = names.map(n => `<option value="${esc(n)}">`).join("");
+}
+
+/* ---------- Table ---------- */
+const COLS = [["status","Status"],["date","Date"],["name","Event / project"],["org","Client"],["venue","Location"],["photographer","Photographer"],["deadline","Deadline"],["xmp","Template"],["gallery","Gallery"]];
+function renderTable(list){
+  list = [...list].sort((a, b) => {
+    const k = SORT.k, va = k === "status" ? STATUSES.indexOf(a.status) : k === "xmp" ? !!a.xmp : (a[k] || "~"), vb = k === "status" ? STATUSES.indexOf(b.status) : k === "xmp" ? !!b.xmp : (b[k] || "~");
+    return (va > vb ? 1 : va < vb ? -1 : 0) * SORT.dir;
+  });
+  if (!list.length) return `<div class="tablebox"><div class="empty">No jobs yet. Add one from a booking link, or start a new job.</div></div>`;
+  return `<div class="tablebox"><table><thead><tr>${COLS.map(([k, l]) => `<th data-sort="${k}">${l}${SORT.k === k ? (SORT.dir > 0 ? " ↑" : " ↓") : ""}</th>`).join("")}</tr></thead><tbody>${list.map(j => `
+    <tr data-id="${j.id}">
+      <td><span class="pill st-${j.status}">${j.status}</span></td>
+      <td>${esc(fmtDate(j.date))}<small>${esc(when(j))}</small></td>
+      <td><b>${esc(title(j))}</b><small>${esc(TYPES[j.type] || "")}</small></td>
+      <td>${esc(j.org)}<small>${esc([j.department, j.contact].filter(Boolean).join(" · "))}</small></td>
+      <td>${esc(j.venue)}<small>${esc(where(j))}</small></td>
+      <td>${esc(j.photographer) || '<span class="miss">—</span>'}</td>
+      <td>${esc(j.deadline) || '<span class="miss">—</span>'}</td>
+      <td>${j.xmp ? '<span class="ok">✓ XMP</span>' : '<span class="miss">None</span>'}</td>
+      <td>${j.gallery ? `<a href="${esc(j.gallery)}" target="_blank" rel="noopener" data-stop>Open ↗</a>` : '<span class="miss">None</span>'}</td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+
+/* ---------- Status board ---------- */
+function renderBoard(list){
+  return `<div class="cols">${STATUSES.map(s => { const js = list.filter(j => j.status === s).sort((a, b) => (a.date || "~").localeCompare(b.date || "~")); return `
+    <div class="col" data-col="${s}"><h3><span class="pill st-${s}">${s}</span><span>${js.length}</span></h3>
+      ${js.map(j => `<div class="card" draggable="true" data-id="${j.id}"><b>${esc(title(j))}</b>
+        <div class="m">${esc(j.org)}</div><div class="m">${esc(fmtDate(j.date))}${j.start ? " · " + esc(fmtTime(j.start)) : ""}</div><div class="m">${esc([j.venue, j.city].filter(Boolean).join(", "))}</div>
+        <div class="icons">${j.photographer ? `<span class="pill" style="background:var(--soft)">${esc(j.photographer)}</span>` : ""}${j.xmp ? '<span class="ok">✓ XMP</span>' : ""}${j.gallery ? '<span class="ok">✓ Gallery</span>' : ""}</div></div>`).join("") || '<div class="note" style="padding:6px">Drop jobs here</div>'}
+    </div>`; }).join("")}</div>`;
+}
+
+/* ---------- Calendar ---------- */
+function renderCal(list){
+  const y = CAL.getFullYear(), m = CAL.getMonth(), first = new Date(y, m, 1), start = new Date(y, m, 1 - first.getDay());
+  const today = new Date().toISOString().slice(0, 10), days = [];
+  for (let i = 0; i < 42; i++){ const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+  if (days[35].getMonth() !== m) days.length = 35;
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `<div class="cal"><div class="calhead"><button class="ghost" data-cal="-1" aria-label="Previous month">‹</button><b>${first.toLocaleDateString("en-US", { month:"long", year:"numeric" })}</b><button class="ghost" data-cal="1" aria-label="Next month">›</button><button class="ghost" data-cal="0">Today</button></div>
+    <div class="grid7">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="dow">${d}</div>`).join("")}
+    ${days.map(d => { const k = iso(d), js = list.filter(j => j.date === k).sort((a, b) => (a.start || "").localeCompare(b.start || "")); return `
+      <div class="day${d.getMonth() !== m ? " out" : ""}${k === today ? " today" : ""}"><div class="n">${d.getDate()}</div>
+        ${js.map(j => `<span class="ev st-${j.status}" data-id="${j.id}" title="${esc(title(j) + " · " + (j.org || ""))}">${j.start ? esc(fmtTime(j.start)) + " " : ""}${esc(title(j))}</span>`).join("")}</div>`; }).join("")}</div></div>`;
+}
+
+function render(){
+  summary();
+  $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === VIEW));
+  const list = filtered();
+  $("#view").innerHTML = VIEW === "board" ? renderBoard(list) : VIEW === "cal" ? renderCal(list) : renderTable(list);
+}
+
+/* ---------- Edit dialog ---------- */
+const F = $("#jobForm");
+F.elements.status.innerHTML = STATUSES.map(s => `<option>${s}</option>`).join("");
+let XMP = null;
+function showXmp(){
+  $("#xmpName").textContent = XMP ? XMP.name : "Drop the .XMP here, or choose it.";
+  $("#xmpGet").hidden = $("#xmpDel").hidden = !XMP;
+}
+function openJob(j){
+  EDIT = j || { id:uid(), status:"Requested", type:"event", created:new Date().toISOString() };
+  $("#dlgTitle").textContent = j ? title(j) : "New job";
+  [...F.elements].forEach(el => { if (el.name) el.value = EDIT[el.name] ?? ""; });
+  XMP = EDIT.xmp || null; showXmp();
+  $("#fileName").dataset.auto = EDIT.filename ? "" : "1";
+  if (!EDIT.filename) $("#fileName").value = fileNameFor(EDIT);
+  $("#delBtn").hidden = !j;
+  $("#galLink").hidden = !EDIT.gallery; $("#galLink").href = EDIT.gallery || "#";
+  $("#dlg").showModal();
+}
+F.addEventListener("submit", e => {
+  if (e.submitter?.value !== "save") return;
+  [...F.elements].forEach(el => { if (el.name) EDIT[el.name] = el.value.trim(); });
+  EDIT.xmp = XMP;
+  const i = JOBS.findIndex(j => j.id === EDIT.id); if (i >= 0) JOBS[i] = EDIT; else JOBS.push(EDIT);
+  save(); render();
+});
+$("#cancelBtn").onclick = () => $("#dlg").close();
+$("#delBtn").onclick = () => {
+  if ($("#delBtn").dataset.sure !== "1"){ $("#delBtn").dataset.sure = "1"; $("#delBtn").textContent = "Click again to delete"; setTimeout(() => { $("#delBtn").dataset.sure = ""; $("#delBtn").textContent = "Delete job"; }, 3000); return; }
+  JOBS = JOBS.filter(j => j.id !== EDIT.id); save(); $("#dlg").close(); render();
+};
+F.elements.gallery.addEventListener("input", e => { $("#galLink").hidden = !e.target.value; $("#galLink").href = e.target.value; });
+
+// Metadata template: stored with the job, downloadable later
+function takeXmp(file){
+  if (!file || !/\.xmp$/i.test(file.name)) { $("#xmpName").textContent = "That isn't an .XMP file."; return; }
+  const r = new FileReader(); r.onload = () => { XMP = { name:file.name, text:r.result }; showXmp(); }; r.readAsText(file);
+}
+$("#xmpPick").onclick = () => $("#xmpFile").click();
+$("#xmpFile").onchange = e => takeXmp(e.target.files[0]);
+const box = $("#xmpBox");
+box.addEventListener("dragover", e => { e.preventDefault(); box.classList.add("over"); });
+box.addEventListener("dragleave", () => box.classList.remove("over"));
+box.addEventListener("drop", e => { e.preventDefault(); box.classList.remove("over"); takeXmp(e.dataTransfer.files[0]); });
+$("#xmpDel").onclick = () => { XMP = null; showXmp(); };
+const saveFile = (text, name, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+$("#xmpGet").onclick = () => XMP && saveFile(XMP.text, XMP.name, "application/rdf+xml");
+
+// Ingest file name, same pattern as the builder: YYYYMMDD_Client_What_Initials_ (Photo Mechanic adds the sequence)
+function fileNameFor(j){
+  const clean = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "");
+  const ini = String(j.photographer || "").split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join("") || "XX";
+  return `${(j.date || "").replace(/-/g, "") || "YYYYMMDD"}_${clean(j.org) || "CLIENT"}_${clean(j.name) || "SHOOT"}_${ini}_`;
+}
+const formJob = () => { const o = { ...EDIT }; [...F.elements].forEach(el => { if (el.name) o[el.name] = el.value.trim(); }); return o; };
+$("#fnMake").onclick = () => { $("#fileName").value = fileNameFor(formJob()); };
+$("#fnCopy").onclick = async () => {
+  const v = $("#fileName").value || fileNameFor(formJob()); $("#fileName").value = v;
+  try { await navigator.clipboard.writeText(v); } catch(e){ $("#fileName").select(); document.execCommand("copy"); }
+  $("#fnCopy").textContent = "Copied ✓"; setTimeout(() => $("#fnCopy").textContent = "Copy", 1500);
+};
+// Fill it in while the name is still the automatic one
+["date","org","name","photographer"].forEach(n => F.elements[n].addEventListener("input", () => { if ($("#fileName").dataset.auto === "1") $("#fileName").value = fileNameFor(formJob()); }));
+$("#fileName").addEventListener("input", e => e.target.dataset.auto = "");
+
+// Open this job in the metadata builder (same link format the booking form makes)
+function builderLink(j){
+  const pick = { type:j.type, name:j.name, org:j.org, subjects:j.subjects, keywords:j.keywords, date:j.date, venue:j.venue, address:j.address, city:j.city, state:j.state, photographer:j.photographer };
+  return "https://ashergreenephoto.netlify.app/index.html?book=" + btoa(unescape(encodeURIComponent(JSON.stringify(pick)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+$("#toBuilder").onclick = () => { [...F.elements].forEach(el => { if (el.name) EDIT[el.name] = el.value.trim(); }); window.open(builderLink(EDIT), "_blank"); };
+
+/* ---------- Add from a booking link ---------- */
+$("#addLink").onclick = () => { $("#linkIn").value = ""; $("#linkErr").textContent = ""; $("#linkDlg").showModal(); };
+// Reads the email's "Label:" / value lines; the builder link fills anything missing.
+const EMAIL = { "name":"contact", "org":"org", "department":"department", "email":"email", "phone":"phone", "dayof name":"dayofName", "dayof phone":"dayofPhone", "type":"type", "event name":"name",
+  "photographer":"photographer", "subjects":"subjects", "date":"date", "start":"start", "end":"end", "duration":"duration", "venue":"venue", "address":"address", "city":"city", "state":"state",
+  "coverage":"coverage", "deadline":"deadline", "usage":"usage", "keywords":"keywords", "shotlist":"shotlist", "notes":"notes" };
+function readEmail(t){
+  const o = {}, lines = t.replace(/\r/g, "").split("\n");
+  for (let i = 0; i < lines.length; i++){
+    const m = lines[i].trim().match(/^([A-Za-z ]+):\s*(.*)$/), k = m && EMAIL[m[1].trim().toLowerCase()]; if (!k) continue;
+    let v = m[2], n = i + 1; const more = [];
+    if (!v){ while (n < lines.length && !/^([A-Za-z ]+):\s*(.*)$/.test(lines[n].trim()) && !/^---/.test(lines[n].trim())){ more.push(lines[n].trim()); n++; } v = more.join("\n").trim(); i = n - 1; }
+    if (v && !o[k]) o[k] = v;
+  }
+  if (o.dayofName || o.dayofPhone) o.dayof = [o.dayofName, o.dayofPhone].filter(Boolean).join(" · ");
+  delete o.dayofName; delete o.dayofPhone; return o;
+}
+$("#linkOk").onclick = e => {
+  const t = $("#linkIn").value, m = t.match(/[?&]book=([A-Za-z0-9_-]+)/);
+  let b = {}; try { if (m) b = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/"))))); } catch(err){}
+  const em = readEmail(t), d = { ...b, ...Object.fromEntries(Object.entries(em).filter(([, v]) => v)) };
+  if (!d.org && !d.name && !d.date){ e.preventDefault(); $("#linkErr").textContent = "That doesn't look like a booking email or link."; return; }
+  const dup = JOBS.find(j => j.date === (d.date || "") && (j.org || "") === (d.org || "") && (j.name || "") === (d.name || ""));
+  if (dup){ e.preventDefault(); $("#linkErr").textContent = "That booking is already on the board. Opening it."; setTimeout(() => { $("#linkDlg").close(); openJob(dup); }, 900); return; }
+  const F2 = ["type","name","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"];
+  const j = { id:uid(), status:"Requested", created:new Date().toISOString() }; F2.forEach(k => j[k] = d[k] || ""); if (!TYPES[j.type]) j.type = "event";
+  JOBS.push(j); save(); render(); setTimeout(() => openJob(j), 50);
+};
+$("#addNew").onclick = () => openJob(null);
+
+/* ---------- Events ---------- */
+document.addEventListener("click", e => {
+  const v = e.target.closest("[data-view]"); if (v){ VIEW = v.dataset.view; try { localStorage.setItem("ashe.boardView", VIEW); } catch(err){} return render(); }
+  const s = e.target.closest("[data-sort]"); if (s){ SORT = { k:s.dataset.sort, dir: SORT.k === s.dataset.sort ? -SORT.dir : 1 }; return render(); }
+  const c = e.target.closest("[data-cal]"); if (c){ const n = +c.dataset.cal; CAL = n ? new Date(CAL.getFullYear(), CAL.getMonth() + n, 1) : new Date(); return render(); }
+  if (e.target.closest("[data-stop]")) return;
+  const row = e.target.closest("#view [data-id]"); if (row) openJob(JOBS.find(j => j.id === row.dataset.id));
+});
+$("#q").addEventListener("input", render); $("#fPhot").addEventListener("change", render);
+
+// Drag cards between status columns
+let dragId = null;
+document.addEventListener("dragstart", e => { const c = e.target.closest(".card"); if (c){ dragId = c.dataset.id; e.dataTransfer.effectAllowed = "move"; } });
+document.addEventListener("dragover", e => { const col = e.target.closest(".col"); if (col && dragId){ e.preventDefault(); $$(".col").forEach(x => x.classList.toggle("over", x === col)); } });
+document.addEventListener("drop", e => {
+  const col = e.target.closest(".col"); if (!col || !dragId) return; e.preventDefault();
+  const j = JOBS.find(x => x.id === dragId); if (j){ j.status = col.dataset.col; save(); } dragId = null; render();
+});
+document.addEventListener("dragend", () => { dragId = null; $$(".col").forEach(x => x.classList.remove("over")); });
+
+/* ---------- Back up / restore ---------- */
+$("#exportBtn").onclick = () => saveFile(JSON.stringify(JOBS, null, 2), `Job board backup ${new Date().toISOString().slice(0, 10)}.json`, "application/json");
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = () => {
+    try { const data = JSON.parse(r.result); if (!Array.isArray(data)) throw 0;
+      const have = new Set(JOBS.map(j => j.id)); const add = data.filter(j => j && j.id && !have.has(j.id));
+      JOBS = JOBS.concat(add); save(); render(); alertNote(`Restored ${add.length} job${add.length === 1 ? "" : "s"} (skipped ${data.length - add.length} already here).`);
+    } catch(err){ alertNote("That file isn't a job board backup."); }
+  }; r.readAsText(f); e.target.value = "";
+};
+
+/* ---------- Server: shared jobs + new bookings (works once the board is deployed from GitHub) ---------- */
+const FROM_FORM = { name:"contact", event_name:"name" };
+function jobFromBooking(b){
+  const j = { id:uid(), status:"Requested", created:b.created || new Date().toISOString(), sub:b.sub };
+  ["type","name","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"].forEach(k => j[k] = "");
+  Object.entries(b).forEach(([k, v]) => { const to = FROM_FORM[k] || k; if (to in j && to !== "id" && to !== "status" && v) j[to] = String(v).trim(); });
+  j.dayof = [b.dayof_name, b.dayof_phone].filter(Boolean).join(" · ");
+  if (!TYPES[j.type]) j.type = "event";
+  return j;
+}
+async function sync(){
+  try {
+    const r = await fetch("/api/jobs"); if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return;
+    const d = await r.json(); CLOUD = true; SEEN = d.seen || [];
+    const have = new Set(d.jobs.map(j => j.id));
+    JOBS = d.jobs.concat(JOBS.filter(j => !have.has(j.id)));   // anything only in this browser moves up to the server
+    let added = 0;
+    const ib = await fetch("/api/inbox").then(x => x.json()).catch(() => ({ bookings:[] }));
+    for (const b of (ib.bookings || []).reverse()){
+      if (SEEN.includes(b.sub)) continue; SEEN.push(b.sub);
+      const nj = jobFromBooking(b);
+      const dup = JOBS.find(j => j.date === nj.date && (j.org || "") === nj.org && (j.name || "") === nj.name);
+      if (dup){ dup.sub = b.sub; continue; }
+      JOBS.push(nj); added++;
+    }
+    save(); render();
+    $("#syncNote").textContent = ib.setup ? "Synced across your devices. Add the Netlify token to pull bookings in automatically." : "Synced across your devices. New bookings appear here by themselves.";
+    if (added) alertNote(`${added} new booking${added === 1 ? "" : "s"} added from the booking form.`);
+  } catch(e){}
+}
+
+render(); sync();
+</script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Book a Shoot · ASHE</title>
+<meta name="description" content="Request photo coverage from Asher Greene: games, events, portraits and brand shoots.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23121212'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Helvetica Neue,Helvetica,Arial,sans-serif' font-weight='700' font-size='42' fill='%23f6f5f0'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F5F0;--panel:#fff;--ink:#121212;--muted:#5f5f5a;--line:#dcdad2;--accent:#123122;--accent-ink:#fff;--err:#a3271b;--sans:"Inter Tight",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px))}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:36px}
+.logo{font-weight:800;letter-spacing:.02em;font-size:18px;color:var(--ink);text-decoration:none}
+.logo sup{font-size:9px}
+header a.small{color:var(--muted);font-size:13px}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.02;margin:0 0 10px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;text-wrap:balance}
+.lede{color:var(--muted);max-width:56ch;margin:0 0 28px}
+fieldset{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:18px 18px 6px;margin:0 0 16px;min-width:0}
+legend{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:0 6px}
+legend b{color:var(--muted);font-weight:600;margin-right:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.full{grid-column:1/-1}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:14px;min-width:0}
+label small{font-weight:400;color:var(--muted)}
+input,select,textarea{display:block;width:100%;margin-top:5px;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 11px}
+textarea{resize:vertical;min-height:84px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.types{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.types label{margin:0;position:relative}
+.types input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;pointer-events:none}
+.types span{display:block;text-align:center;border:1px solid var(--line);border-radius:8px;padding:11px 6px;font-weight:600;cursor:pointer;background:var(--bg)}
+.types input:checked+span{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.types input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted);margin:-8px 0 14px}
+.auto{color:var(--accent);font-weight:600}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+button{font:inherit;font-weight:700;font-size:15px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:13px 26px;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+.note{font-size:13px;color:var(--muted)}
+.done{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
+.done h2{margin:0 0 6px;font-size:22px;text-transform:uppercase}
+.done a{color:var(--accent);font-weight:700}
+.req{color:var(--err)}
+.vwrap{position:relative;margin-bottom:14px}
+#vlist{position:absolute;z-index:5;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.08);max-height:280px;overflow:auto}
+#vlist li{padding:8px 10px;border-radius:6px;cursor:pointer;font-size:14px}
+#vlist li small{display:block;color:var(--muted);font-size:12px}
+#vlist li[aria-selected=true],#vlist li:hover{background:var(--bg)}
+@media (max-width:600px){.grid{grid-template-columns:1fr}.types{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a class="logo" href="index.html">ASHE<sup>®</sup></a><a class="small" href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></header>
+
+  <div id="formView">
+  <h1>Book a shoot</h1>
+  <p class="lede">Tell me about the job. These details go straight into captions, keywords and file names, so exact names and spellings help. Fields marked <span class="req">*</span> are required.</p>
+
+  <form id="book" name="booking" method="POST" data-netlify="true" netlify-honeypot="company_site">
+    <input type="hidden" name="form-name" value="booking">
+    <input type="hidden" name="builder_link" id="builderLink">
+    <p hidden><label>Leave this empty<input maxlength="200" name="company_site"></label></p>
+
+    <fieldset><legend><b>01</b>Contact</legend><div class="grid">
+      <label>Your name <span class="req">*</span><input maxlength="200" name="name" id="who" required autocomplete="name" list="savedNames"></label>
+      <label>Organization / client <span class="req">*</span><input maxlength="200" name="org" required autocomplete="organization" placeholder="e.g. Atlanta Falcons"></label>
+      <p class="hint full auto" id="welcomeBack" hidden style="margin:-6px 0 14px">Welcome back. Your details from last time are filled in; change anything that's different.</p>
+      <label class="full">Department <small>(optional)</small><input maxlength="200" name="department" placeholder="e.g. Community Relations"></label>
+      <label>Email <span class="req">*</span><input maxlength="200" name="email" type="email" required autocomplete="email"></label>
+      <label>Phone <span class="req">*</span><input maxlength="200" name="phone" type="tel" required autocomplete="tel"></label>
+      <label>Day-of contact <small>(if different)</small><input maxlength="200" name="dayof_name" placeholder="Name"></label>
+      <label>Day-of phone<input maxlength="200" name="dayof_phone" type="tel"></label>
+    </div></fieldset>
+
+    <fieldset><legend><b>02</b>Shoot</legend>
+      <div class="types" role="radiogroup" aria-label="Shoot type">
+        <label><input type="radio" name="type" value="game" required><span>Gameday</span></label>
+        <label><input type="radio" name="type" value="portrait"><span>Portrait</span></label>
+        <label><input type="radio" name="type" value="commercial"><span>Commercial</span></label>
+        <label><input type="radio" name="type" value="event" checked><span>Event</span></label>
+        <label><input type="radio" name="type" value="practice"><span>Practice</span></label>
+      </div>
+      <label><span id="nameLabel">Event name</span> <span class="req">*</span><input maxlength="200" name="event_name" id="eventName" required placeholder="e.g. Spring Alumni Dinner"></label>
+      <label>Preferred photographer <small>(optional)</small><input maxlength="200" name="photographer" placeholder="Leave blank if anyone on the team works"></label>
+      <label>Key subjects <small>(names of people, teams or sponsors to tag, comma-separated)</small><input maxlength="200" name="subjects" placeholder="e.g. Bijan Robinson, Arthur Blank, Coca-Cola"></label>
+    </fieldset>
+
+    <fieldset><legend><b>03</b>When &amp; where</legend><div class="grid">
+      <label class="full">Date <span class="req">*</span><input name="date" type="date" required></label>
+      <label>Start time <small>(optional)</small><input name="start" type="time"></label>
+      <label>End time <small>(optional)</small><input name="end" type="time"></label>
+      <label class="full">Or duration <small>(optional)</small><input maxlength="200" name="duration" placeholder="e.g. 2 hours, half day, full game"></label>
+      <div class="full vwrap"><label style="margin-bottom:0">Venue <span class="req">*</span><input maxlength="200" name="venue" id="venue" required placeholder="Start typing, e.g. Mercedes-Benz Stadium" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="vlist" aria-expanded="false"></label>
+        <ul id="vlist" role="listbox" hidden></ul></div>
+      <p class="hint full" id="venueHint" style="margin-top:6px">Pick a venue from the list and the address fills in. Not listed? Type the address below.</p>
+      <label class="full">Street address<input maxlength="200" name="address" id="address" autocomplete="off"></label>
+      <label>City<input maxlength="200" name="city" id="city"></label>
+      <label>State<input maxlength="200" name="state" id="state"></label>
+      <input type="hidden" name="zip" id="zip">
+    </div></fieldset>
+
+    <fieldset><legend><b>04</b>Deliverables</legend><div class="grid">
+      <label>Preferred selects / coverage<input maxlength="200" name="coverage" placeholder="e.g. 50 selects, or full coverage"></label>
+      <label>Deadline<input maxlength="200" name="deadline" placeholder="e.g. same night, 48 hours"></label>
+      <label class="full">Usage<input maxlength="200" name="usage" placeholder="e.g. social / web / marketing / internal"></label>
+      <p class="hint full">Photos are delivered as a gallery link.</p>
+      <label class="full">Extra keywords <small>(campaign names, hashtags)</small><input maxlength="200" name="keywords" placeholder="e.g. Rise Up, Salute to Service"></label>
+    </div></fieldset>
+
+    <fieldset><legend><b>05</b>Notes</legend>
+      <label>Shot list / must-gets<textarea maxlength="2000" name="shotlist" placeholder="Specific moments, groups or setups you need"></textarea></label>
+      <label>Anything else<textarea maxlength="2000" name="notes" placeholder="Parking, credentials, dress code, timeline…"></textarea></label>
+    </fieldset>
+
+    <div class="row"><button type="submit" id="send">Send request</button><span class="note" id="status"></span></div>
+  </form>
+  </div>
+
+  <div id="doneView" hidden>
+    <div class="done">
+      <h2>Request sent</h2>
+      <p>Thanks. I'll confirm by email within a day.</p>
+      <p class="note" id="localNote" hidden>Testing on this computer: the request wasn't sent anywhere (that works once the site is on Netlify). <a id="openBuilder" href="#">Open it in the builder →</a></p>
+    </div>
+  </div>
+</div>
+<datalist id="savedNames"></datalist>
+<script>
+// Venues the form knows: name → [city, state]. Add your regular spots here.
+const VENUES = {
+  "Mercedes-Benz Stadium":["Atlanta","Georgia"], "State Farm Arena":["Atlanta","Georgia"], "Truist Park":["Atlanta","Georgia"],
+  "Gateway Center Arena":["College Park","Georgia"], "Center Parc Stadium":["Atlanta","Georgia"], "Bobby Dodd Stadium":["Atlanta","Georgia"],
+  "McCamish Pavilion":["Atlanta","Georgia"], "Gas South Arena":["Duluth","Georgia"], "Fifth Third Stadium":["Kennesaw","Georgia"],
+  "IBM Performance Field":["Flowery Branch","Georgia"], "Sanford Stadium":["Athens","Georgia"], "Stegeman Coliseum":["Athens","Georgia"],
+  "Georgia World Congress Center":["Atlanta","Georgia"], "Fox Theatre":["Atlanta","Georgia"], "Coca-Cola Roxy":["Atlanta","Georgia"],
+  "Tabernacle":["Atlanta","Georgia"], "College Football Hall of Fame":["Atlanta","Georgia"], "Atlanta Marriott Marquis":["Atlanta","Georgia"],
+  "InterContinental Buckhead Atlanta":["Atlanta","Georgia"], "Georgia Aquarium":["Atlanta","Georgia"], "Piedmont Park":["Atlanta","Georgia"],
+  "Lakewood Amphitheatre":["Atlanta","Georgia"], "East Lake Golf Club":["Atlanta","Georgia"], "Atlanta Motor Speedway":["Hampton","Georgia"]
+};
+const $ = s => document.querySelector(s), F = $("#book");
+
+// Venue search: your saved venues first, then OpenStreetMap (Photon, free, no key), Atlanta first, then nationwide; best name match wins.
+const norm = s => s.toLowerCase().replace(/^the\s+/, "").replace(/[^a-z0-9]/g, "");
+const V = $("#venue"), L = $("#vlist"), US = {AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia"};
+let opts = [], hi = -1, timer = 0, seq = 0;
+function fill(o){
+  V.value = o.name;
+  [["address", o.address], ["city", o.city], ["state", o.state], ["zip", o.zip]].forEach(([id, v]) => { const el = $("#"+id); if (v && (!el.value || el.dataset.auto)){ el.value = v; el.dataset.auto = 1; } });
+  const where = [o.address, o.city, o.state].filter(Boolean).join(", ");
+  $("#venueHint").textContent = where ? `Filled in: ${where}` : "Found the venue, but no address. Please add it below.";
+  $("#venueHint").classList.toggle("auto", !!where); close();
+}
+function close(){ L.hidden = true; V.setAttribute("aria-expanded", "false"); hi = -1; }
+function show(){
+  if (!opts.length) return close();
+  L.innerHTML = opts.map((o, i) => `<li role="option" id="vo${i}" data-i="${i}" aria-selected="${i === hi}">${esc(o.name)}<small>${esc([o.address, o.city, o.state].filter(Boolean).join(", "))}</small></li>`).join("");
+  L.hidden = false; V.setAttribute("aria-expanded", "true");
+}
+const esc = s => String(s || "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]);
+// Google Places (New) text search. Paste your browser key (restricted to your site) between the quotes; empty = OpenStreetMap only.
+const GOOGLE_KEY = "AIzaSyBTQt4OYzKIPVZj94sRJ4qvtzZegwm07BU";   // restricted to ashergreenephoto.netlify.app, so it only works there. Forks: use your own key or leave empty.
+async function google(q){
+  const r = await fetch("https://places.googleapis.com/v1/places:searchText", { method:"POST",
+    headers:{ "Content-Type":"application/json", "X-Goog-Api-Key":GOOGLE_KEY, "X-Goog-FieldMask":"places.displayName,places.addressComponents" },
+    body: JSON.stringify({ textQuery:q, pageSize:6, languageCode:"en" }) });
+  if (!r.ok) throw new Error(r.status);
+  return ((await r.json()).places || []).map(p => {
+    const c = t => (p.addressComponents || []).find(a => a.types.includes(t)) || {};
+    const us = c("country").shortText === "US";
+    return { name:p.displayName?.text || "", address:[c("street_number").longText, c("route").longText].filter(Boolean).join(" "),
+      city:c("locality").longText || c("postal_town").longText || c("sublocality").longText || "",
+      state: us ? c("administrative_area_level_1").longText || "" : c("administrative_area_level_1").longText || c("country").longText || "", zip:c("postal_code").longText || "", g:1 };
+  }).filter(o => o.name);
+}
+async function lookup(q){
+  const mine = Object.keys(VENUES).filter(k => norm(k).includes(norm(q))).slice(0, 4).map(k => ({ name:k, address:VENUES[k][2] || "", city:VENUES[k][0], state:VENUES[k][1] }));
+  opts = mine; hi = -1; show();
+  if (q.length < 3) return;
+  const my = ++seq;
+  try {
+    const NO = "&osm_tag=!railway&osm_tag=!public_transport&osm_tag=!highway&osm_tag=!emergency";   // skip train stations, bus stops, roads, call boxes
+    const api = (t, near) => fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(t)}&limit=10&lang=en${near ? "&lat=33.749&lon=-84.388" : ""}${NO}`).then(r => r.json()).catch(() => ({ features:[] }));
+    const tries = [[q, 1], [q, 0]]; if (/\s/.test(q)) tries.push([q.replace(/\s+/g, ""), 1]);   // near Atlanta and nationwide; "Top Golf" also finds "Topgolf"
+    const words = q.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9]/g, "")).filter(Boolean);
+    const score = o => { const n = norm(o.name), k = norm(q); return n === k ? 3 : n.startsWith(k) ? 2 : words.every(w => n.includes(w)) ? 1 : 0; };
+    if (GOOGLE_KEY) try {   // Google first; OpenStreetMap only if Google fails
+      const gf = await google(q); if (my !== seq) return;
+      if (gf.length){ mine.forEach(m => { const f = gf.find(o => norm(o.name) === norm(m.name) && o.address); if (f && !m.address){ m.address = f.address; m.zip = f.zip; } });   // saved venues borrow Google's street address
+        const seen = new Set(mine.map(o => norm(o.name) + norm(o.city))); opts = [...mine, ...gf.filter(o => !seen.has(norm(o.name) + norm(o.city)))].slice(0, 7); return show(); }
+    } catch(e){}
+    const all = await Promise.all(tries.map(([t, near]) => api(t, near))); if (my !== seq) return;
+    const found = all.flatMap(j => j.features).map(f => f.properties).filter(p => p.name).map(p => ({
+      name:p.name, address:[p.housenumber, p.street].filter(Boolean).join(" "), city:p.city || p.town || p.village || p.district || "",
+      state: p.countrycode === "US" ? (US[p.state] || p.state || "") : (p.state || ""), zip:p.postcode || "" }));
+    found.sort((a, b) => score(b) - score(a) || (b.state === "Georgia") - (a.state === "Georgia") || (!!b.address) - (!!a.address));   // best name match, then nearby, then with an address
+    mine.forEach(m => { const f = found.find(o => norm(o.name) === norm(m.name) && norm(o.city) === norm(m.city) && o.address); if (f && !m.address){ m.address = f.address; m.zip = f.zip; } });
+    const seen = new Set(mine.map(o => norm(o.name) + norm(o.city)));
+    opts = [...mine, ...found.filter(o => !seen.has(norm(o.name) + norm(o.city)) && seen.add(norm(o.name) + norm(o.city)))].slice(0, 7);
+    show();
+  } catch(e){}   // offline or blocked: saved venues and typing still work
+}
+V.addEventListener("input", () => { clearTimeout(timer); const q = V.value.trim(); if (q.length < 2) return close(); timer = setTimeout(() => lookup(q), GOOGLE_KEY ? 450 : 250); });   // a little slower with Google, so fewer paid lookups
+V.addEventListener("keydown", e => {
+  if (L.hidden) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp"){ e.preventDefault(); hi = (hi + (e.key === "ArrowDown" ? 1 : opts.length - 1)) % opts.length; show(); V.setAttribute("aria-activedescendant", "vo" + hi); }
+  else if (e.key === "Enter" && hi >= 0){ e.preventDefault(); fill(opts[hi]); }
+  else if (e.key === "Escape") close();
+});
+L.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li){ e.preventDefault(); fill(opts[+li.dataset.i]); } });
+V.addEventListener("blur", () => { setTimeout(close, 100); const k = Object.keys(VENUES).find(k => norm(k) === norm(V.value)); if (k && !$("#city").value) fill({ name:k, address:VENUES[k][2] || "", city:VENUES[k][0], state:VENUES[k][1] }); });
+["#address","#city","#state"].forEach(id => $(id).addEventListener("input", e => delete e.target.dataset.auto));
+
+// The name field's label follows the shoot type
+const LABELS = { game:["Matchup","e.g. 49ers vs Falcons"], event:["Event name","e.g. Spring Alumni Dinner"], portrait:["Session name","e.g. 2026 Media Day"], commercial:["Project / campaign","e.g. Spring Kit Launch"], practice:["Practice name","e.g. Training camp, open practice"] };
+F.elements.date.addEventListener("change", () => { delete F.dataset.pastOk; $("#send").textContent = "Send request"; $("#status").textContent = ""; });
+F.addEventListener("change", e => { if (e.target.name !== "type") return; const [l, p] = LABELS[e.target.value]; $("#nameLabel").textContent = l; $("#eventName").placeholder = p; });
+
+// Repeat clients: contact details are saved on this device after a request and filled back in when they type their name.
+const KEEP = ["name","org","department","email","phone","dayof_name","dayof_phone","coverage","usage"];
+const store = { get(){ try { return JSON.parse(localStorage.getItem("ashe.book") || "{}"); } catch(e){ return {}; } },
+                set(v){ try { localStorage.setItem("ashe.book", JSON.stringify(v)); } catch(e){} } };
+const nameKey = n => n.trim().toLowerCase().replace(/\s+/g, " ");
+function listNames(){ $("#savedNames").innerHTML = Object.values(store.get()).map(p => `<option value="${esc(p.name)}">`).join(""); }
+function recall(){
+  const p = store.get()[nameKey($("#who").value)]; if (!p) return;
+  let n = 0; KEEP.forEach(k => { const el = F.elements[k]; if (k !== "name" && p[k] && !el.value){ el.value = p[k]; n++; } });
+  if (n) { $("#status").textContent = ""; $("#welcomeBack").hidden = false; }
+}
+$("#who").addEventListener("change", recall); $("#who").addEventListener("blur", recall);
+listNames();
+
+// The builder link carries what the builder needs; base64url so it survives email
+function builderLink(d){
+  const pick = { type:d.type, name:d.event_name, org:d.org, subjects:d.subjects, keywords:d.keywords, date:d.date, venue:d.venue, address:d.address, photographer:d.photographer, city:d.city, state:d.state };
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(pick)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return new URL("index.html?book=" + code, location.href).href;
+}
+
+F.addEventListener("submit", async e => {
+  e.preventDefault();
+  const d = Object.fromEntries(new FormData(F));
+  if (d.start && d.end && d.end <= d.start){ $("#status").textContent = "End time is before the start time."; return; }
+  const today = new Date(); const ymd = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  if (d.date && d.date < ymd && F.dataset.pastOk !== d.date){
+    F.dataset.pastOk = d.date;
+    $("#status").textContent = `${new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" })} is in the past. If that's right, click Yes, send it.`;
+    $("#send").textContent = "Yes, send it"; return;
+  }
+  const link = builderLink(d); $("#builderLink").value = link;
+  $("#send").disabled = true; $("#send").textContent = "Send request"; $("#status").textContent = "Sending…";
+  let sent = false;
+  try {
+    const r = await fetch("/", { method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body:new URLSearchParams(new FormData(F)).toString() });
+    sent = r.ok;
+  } catch(err){}
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.protocol === "file:";
+  if (!sent && !local){ $("#send").disabled = false; $("#status").textContent = "That didn't go through. Please try again, or email me directly."; return; }
+  const all = store.get(); all[nameKey(d.name)] = Object.fromEntries(KEEP.map(k => [k, d[k] || ""])); store.set(all);
+  $("#formView").hidden = true; $("#doneView").hidden = false; window.scrollTo(0, 0);
+  if (!sent){ $("#localNote").hidden = false; $("#openBuilder").href = link; }
+});
+</script>
+</body>
+</html>
