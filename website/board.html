@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="robots" content="noindex">
 <title>Job Board · ASHE</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23121212'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Helvetica Neue,Helvetica,Arial,sans-serif' font-weight='700' font-size='42' fill='%23f6f5f0'%3EA%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,11 +75,12 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
 .foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;align-items:center}
 .note{font-size:12px;color:var(--muted)}
 @media (max-width:700px){.cal{padding:8px}.grid7{gap:2px}.calhead b{min-width:0;font-size:14px}.fg{grid-template-columns:1fr}.day{min-height:64px}.ev{font-size:10px}}
+.owner{position:relative;display:inline-block}.owner>button{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer}.owner-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}.owner-menu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}.owner-menu a:hover{background:var(--soft,var(--bg))}.owner-menu a[aria-current]{font-weight:700}.owner-menu[hidden]{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><a class="logo" href="https://ashergreenephoto.netlify.app/">ASHE<sup>®</sup></a><nav><a href="https://ashergreenephoto.netlify.app/booking">Booking form</a><a href="https://ashergreenephoto.netlify.app/">Metadata builder</a></nav></header>
+  <header><a class="logo" href="https://ashergreenephoto.com">ASHE<sup>®</sup></a><nav><span class="owner"><button id="ownerBtn" type="button" aria-expanded="false" aria-controls="ownerMenu">Owner access</button><span id="ownerMenu" class="owner-menu" hidden><a href="index.html">Metadata builder</a><a href="booking.html">Booking form</a><a href="board.html" aria-current="page">Job board</a></span></span></nav></header>
 
   <div class="top">
     <div><h1>Job board</h1><p class="sub" id="summary"></p></div>
@@ -102,8 +104,9 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
     <input type="file" id="importFile" accept=".json" hidden>
   </div>
 
+  <form id="lockForm" class="bar" hidden style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px"><b>Owner passcode</b><input id="lockIn" type="password" autocomplete="current-password" style="max-width:240px"><button>Unlock</button><span class="note">Your jobs and bookings stay hidden until you unlock.</span></form>
   <div id="view"></div>
-  <p class="note" style="margin-top:14px">Private site: only you can open it, signed in to Netlify. <span id="syncNote">Jobs are saved in this browser; use Back up to keep a copy.</span></p>
+  <p class="note" style="margin-top:14px"><span id="syncNote">Jobs are saved in this browser; use Back up to keep a copy.</span></p>
 </div>
 
 <dialog id="dlg"><form method="dialog" class="dlg" id="jobForm" novalidate>
@@ -181,7 +184,7 @@ const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]");
 let CLOUD = false, SEEN = [], pushT = 0;
 const save = () => {
   try { localStorage.setItem(KEY, JSON.stringify(JOBS)); } catch(e){ if (!CLOUD) alertNote("Couldn't save in this browser. Use Back up."); }
-  if (CLOUD){ clearTimeout(pushT); pushT = setTimeout(() => fetch("/api/jobs", { method:"PUT", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ jobs:JOBS, seen:SEEN }) })
+  if (CLOUD){ clearTimeout(pushT); pushT = setTimeout(() => fetch("/api/jobs", { method:"PUT", headers:{ "Content-Type":"application/json", "x-board-key":BKEY() }, body:JSON.stringify({ jobs:JOBS, seen:SEEN }) })
     .catch(() => alertNote("Couldn't reach the server. Changes are kept in this browser for now.")), 400); }
 };
 let JOBS = load(), VIEW = "table", SORT = { k:"date", dir:1 }, CAL = new Date(), EDIT = null;
@@ -330,7 +333,7 @@ $("#fileName").addEventListener("input", e => e.target.dataset.auto = "");
 // Open this job in the metadata builder (same link format the booking form makes)
 function builderLink(j){
   const pick = { type:j.type, name:j.name, org:j.org, subjects:j.subjects, keywords:j.keywords, date:j.date, venue:j.venue, address:j.address, city:j.city, state:j.state, photographer:j.photographer };
-  return "https://ashergreenephoto.netlify.app/index.html?book=" + btoa(unescape(encodeURIComponent(JSON.stringify(pick)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return "index.html?book=" + btoa(unescape(encodeURIComponent(JSON.stringify(pick)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 $("#toBuilder").onclick = () => { [...F.elements].forEach(el => { if (el.name) EDIT[el.name] = el.value.trim(); }); window.open(builderLink(EDIT), "_blank"); };
 
@@ -407,15 +410,17 @@ function jobFromBooking(b){
   if (!TYPES[j.type]) j.type = "event";
   return j;
 }
+const BKEY = () => { try { return localStorage.getItem("ashe.boardKey") || ""; } catch(e){ return ""; } };
 async function sync(){
   try {
-    const r = await fetch("/api/jobs"); if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return;
-    const d = await r.json(); CLOUD = true; SEEN = d.seen || [];
+    const r = await fetch("/api/jobs", { headers:{ "x-board-key":BKEY() } });
+    if (r.status === 401){ $("#lockForm").hidden = false; $("#syncNote").textContent = "Locked. Enter your passcode to see your jobs."; return; }
+    if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return;   // no server here (local copy): this browser only
+    const d = await r.json(); $("#lockForm").hidden = true; CLOUD = true; SEEN = d.seen || [];
     const have = new Set(d.jobs.map(j => j.id));
     JOBS = d.jobs.concat(JOBS.filter(j => !have.has(j.id)));   // anything only in this browser moves up to the server
     let added = 0;
-    const ib = await fetch("/api/inbox").then(x => x.json()).catch(() => ({ bookings:[] }));
-    for (const b of (ib.bookings || []).reverse()){
+    for (const b of (d.bookings || []).sort((x, y) => (x.created || "").localeCompare(y.created || ""))){
       if (SEEN.includes(b.sub)) continue; SEEN.push(b.sub);
       const nj = jobFromBooking(b);
       const dup = JOBS.find(j => j.date === nj.date && (j.org || "") === nj.org && (j.name || "") === nj.name);
@@ -423,12 +428,16 @@ async function sync(){
       JOBS.push(nj); added++;
     }
     save(); render();
-    $("#syncNote").textContent = ib.setup ? "Synced across your devices. Add the Netlify token to pull bookings in automatically." : "Synced across your devices. New bookings appear here by themselves.";
+    $("#syncNote").textContent = "Synced across your devices. New bookings appear here by themselves.";
     if (added) alertNote(`${added} new booking${added === 1 ? "" : "s"} added from the booking form.`);
   } catch(e){}
 }
+$("#lockForm").addEventListener("submit", e => { e.preventDefault(); try { localStorage.setItem("ashe.boardKey", $("#lockIn").value.trim()); } catch(err){} $("#lockIn").value = ""; sync(); });
 
 render(); sync();
 </script>
+<script>(() => { const b = document.getElementById("ownerBtn"), m = document.getElementById("ownerMenu"), shut = () => { m.hidden = true; b.setAttribute("aria-expanded", "false"); };
+  b.addEventListener("click", e => { e.stopPropagation(); m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); });
+  document.addEventListener("click", e => { if (!e.target.closest(".owner")) shut(); }); document.addEventListener("keydown", e => { if (e.key === "Escape") shut(); }); })();</script>
 </body>
 </html>

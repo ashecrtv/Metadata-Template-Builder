@@ -2,15 +2,18 @@
 
 Free tools for sports and event photographers who caption in Photo Mechanic.
 
-- **`website/`**: the public site. It has the metadata builder (Getty, AP, Imagn, Icon and ZUMA style captions, code replacements, keywords, an XMP template and an ingest file name) and a client booking form (Netlify Forms).
-- **`board-site/`**: a private job board. Booking requests show up on it by themselves, and your jobs sync across your devices (Netlify Functions and Blobs). Deploy it as its own Netlify site with team login turned on.
+Everything is in **`website/`**, one Netlify site with three pages:
+- **Metadata builder** (`index.html`): Getty, AP, Imagn, Icon and ZUMA style captions, code replacements, keywords, an XMP template and an ingest file name.
+- **Booking form** (`booking.html`): clients request a shoot. You get an email with a link that builds the template.
+- **Job board** (`board.html`): booking requests show up here by themselves, and your jobs sync across your devices. The page is public, but its data is locked with your own passcode.
 
 ## Run your own copy
 1. Fork this repo.
-2. In Netlify, create a site from the fork with base directory `website`. Turn on form notifications for the `booking` form.
-3. Create a second site from the same fork with base directory `board-site`. Under Site configuration → Access control, turn on team login.
-4. On the board site, add two environment variables: `NETLIFY_TOKEN` (a personal access token from your Netlify user settings) and `BOOKING_FORM_ID` (from Forms → booking on the public site).
-5. Change the venue key in `website/booking.html` (`GOOGLE_KEY`) to your own Google Places key, restricted to your domain, or leave it empty to use free OpenStreetMap search.
+2. In Netlify, choose Add new project → Import from Git, pick your fork and set the base directory to `website`.
+3. Under Project configuration → Environment variables, add `BOARD_KEY` and set it to a passcode of your choice. Enter it on the job board to unlock it.
+4. Under Forms, turn on email notifications for the `booking` form.
+5. Set `GOOGLE_KEY` in `website/booking.html` to your own Google Places key, restricted to your domain. Or leave it empty to use the free OpenStreetMap search.
+6. To get updates later, click **Sync fork** on GitHub. Netlify redeploys your copy by itself.
 
 No keys or client data live in this repo. Bookings and jobs stay in your own Netlify account.
 

@@ -251,7 +251,7 @@ body.noscroll{overflow:hidden}
 <body>
 <header class="site">
   <a class="brand" href="https://ashergreenephoto.com" target="_blank" rel="noopener" aria-label="ASHE, ashergreenephoto.com"><span class="logo">ASHE<sup>®</sup></span><span class="divider" aria-hidden="true"></span><span class="wordmark">Metadata Template Builder</span></a>
-  <nav><button id="showIntro" type="button">How it works</button><span class="owner"><button id="ownerBtn" type="button" aria-expanded="false" aria-controls="ownerMenu">Owner access</button><span id="ownerMenu" class="owner-menu" hidden><a href="index.html">Metadata builder</a><a href="booking.html">Booking form</a><a href="https://ashergreenephoto-internal-board.netlify.app" target="_blank" rel="noopener">Job board</a></span></span><a href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></nav>
+  <nav><button id="showIntro" type="button">How it works</button><span class="owner"><button id="ownerBtn" type="button" aria-expanded="false" aria-controls="ownerMenu">Owner access</button><span id="ownerMenu" class="owner-menu" hidden><a href="index.html">Metadata builder</a><a href="booking.html">Booking form</a><a href="board.html">Job board</a></span></span><a href="https://ashergreenephoto.com" target="_blank" rel="noopener">ashergreenephoto.com</a></nav>
 </header>
 <main id="top">
   <section class="hero">
@@ -2507,7 +2507,7 @@ async function loadBooking(code){
   $("#introDone").addEventListener("click", () => { $("#intro").classList.add("hidden"); try { localStorage.setItem("rcb.introSeen", "1"); } catch(e){} });
   $("#showIntro").addEventListener("click", () => { $("#intro").classList.remove("hidden"); $("#intro").scrollIntoView({ behavior:"smooth", block:"center" }); });
 })();
-// Owner access: one menu to the three pages (the job board itself should sit behind the Netlify password)
+// Owner access: one menu to the three pages (the job board's data is locked with your passcode)
 (() => {
   const btn = $("#ownerBtn"), menu = $("#ownerMenu");
   btn.addEventListener("click", e => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute("aria-expanded", String(!menu.hidden)); });

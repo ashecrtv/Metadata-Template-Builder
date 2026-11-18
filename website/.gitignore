@@ -2,3 +2,5 @@
 _test/
 *.XMP
 *.xmp
+node_modules/
+.netlify/
