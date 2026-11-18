@@ -76,8 +76,8 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
 .note{font-size:12px;color:var(--muted)}
 @media (max-width:700px){.cal{padding:8px}.grid7{gap:2px}.calhead b{min-width:0;font-size:14px}.fg{grid-template-columns:1fr}.day{min-height:64px}.ev{font-size:10px}}
 .owner{position:relative;display:inline-block}.owner>button{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer}.owner-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}.owner-menu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}.owner-menu a:hover{background:var(--soft,var(--bg))}.owner-menu a[aria-current]{font-weight:700}.owner-menu[hidden]{display:none}
-.tabs{display:inline-flex;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-@media (max-width:640px){header{flex-wrap:wrap;gap:10px}header .ext{display:none}}
+.tabs{display:inline-flex;flex-wrap:wrap;max-width:100%;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+@media (max-width:640px){header{flex-wrap:wrap;gap:10px}header .ext{display:none}.tabs a{padding:6px 9px}}
 </style>
 </head>
 <body>
@@ -127,10 +127,11 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
     <label>Day-of contact<input name="dayof"></label>
     <div class="sec">When &amp; where</div>
     <label>Date<input name="date" type="date"></label>
-    <label>Photographer<input name="photographer" list="photList"></label>
+    <label>Lead photographer<input name="photographer" list="photList"></label>
     <label>Start<input name="start" type="time"></label>
     <label>End<input name="end" type="time"></label>
     <label class="full">Duration<input name="duration"></label>
+    <label class="full">Crew <span class="note" style="font-weight:400">(other photographers, comma separated; each gets their own template and file name)</span><input name="crew" list="photList" placeholder="e.g. Madison Morris, Jay Lee"></label>
     <label>Venue<input name="venue"></label>
     <label>Street address<input name="address"></label>
     <label>City<input name="city"></label>
@@ -145,6 +146,7 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
     <label class="full">Notes<textarea name="notes" rows="2"></textarea></label>
     <div class="sec">Delivery</div>
     <label class="full">Gallery link<input name="gallery" type="url" placeholder="https://…"></label>
+    <div class="full" id="crewFiles" hidden></div>
     <div class="xmpbox" id="xmpBox">
       <div style="flex:1;min-width:200px"><b>Metadata template</b><div class="note" id="xmpName">Drop the .XMP here, or choose it.</div></div>
       <button type="button" class="ghost" id="xmpPick">Choose .XMP</button>
@@ -204,13 +206,14 @@ const title = j => j.name || TYPES[j.type] || "Untitled job";
 
 function filtered(){
   const q = $("#q").value.trim().toLowerCase(), p = $("#fPhot").value;
-  return JOBS.filter(j => (!p || j.photographer === p) && (!q || [j.org, j.name, j.venue, j.city, j.contact, j.department, j.photographer].join(" ").toLowerCase().includes(q)));
+  const crewOf = j => [j.photographer, ...String(j.crew || "").split(",")].map(x => x.trim()).filter(Boolean);
+  return JOBS.filter(j => (!p || crewOf(j).includes(p)) && (!q || [j.org, j.name, j.venue, j.city, j.contact, j.department, j.photographer].join(" ").toLowerCase().includes(q)));
 }
 function summary(){
   const up = JOBS.filter(j => j.date && j.date >= new Date().toISOString().slice(0, 10) && j.status !== "Delivered").length;
   const open = JOBS.filter(j => j.status === "Requested").length;
   $("#summary").textContent = `${JOBS.length} job${JOBS.length === 1 ? "" : "s"} · ${up} upcoming · ${open} waiting to confirm`;
-  const names = [...new Set(JOBS.map(j => j.photographer).filter(Boolean))].sort();
+  const names = [...new Set(JOBS.flatMap(j => [j.photographer, ...String(j.crew || "").split(",")]).map(x => (x || "").trim()).filter(Boolean))].sort();
   const cur = $("#fPhot").value;
   $("#fPhot").innerHTML = `<option value="">All photographers</option>` + names.map(n => `<option${n === cur ? " selected" : ""}>${esc(n)}</option>`).join("");
   $("#photList").innerHTML = names.map(n => `<option value="${esc(n)}">`).join("");
@@ -233,7 +236,7 @@ function renderTable(list){
       <td>${esc(j.venue)}<small>${esc(where(j))}</small></td>
       <td>${esc(j.photographer) || '<span class="miss">—</span>'}</td>
       <td>${esc(j.deadline) || '<span class="miss">—</span>'}</td>
-      <td>${j.xmp ? '<span class="ok">✓ XMP</span>' : '<span class="miss">None</span>'}</td>
+      <td>${j.xmp ? (j.draft ? '<span class="pill st-Requested">Draft, check</span>' : '<span class="ok">✓ XMP</span>') : (DRAFTING.has(j.id) ? '<span class="miss">Drafting…</span>' : '<span class="miss">None</span>')}</td>
       <td>${j.gallery ? `<a href="${esc(j.gallery)}" target="_blank" rel="noopener" data-stop>Open ↗</a>` : '<span class="miss">None</span>'}</td>
     </tr>`).join("")}</tbody></table></div>`;
 }
@@ -244,7 +247,7 @@ function renderBoard(list){
     <div class="col" data-col="${s}"><h3><span class="pill st-${s}">${s}</span><span>${js.length}</span></h3>
       ${js.map(j => `<div class="card" draggable="true" data-id="${j.id}"><b>${esc(title(j))}</b>
         <div class="m">${esc(j.org)}</div><div class="m">${esc(fmtDate(j.date))}${j.start ? " · " + esc(fmtTime(j.start)) : ""}</div><div class="m">${esc([j.venue, j.city].filter(Boolean).join(", "))}</div>
-        <div class="icons">${j.photographer ? `<span class="pill" style="background:var(--soft)">${esc(j.photographer)}</span>` : ""}${j.xmp ? '<span class="ok">✓ XMP</span>' : ""}${j.gallery ? '<span class="ok">✓ Gallery</span>' : ""}</div></div>`).join("") || '<div class="note" style="padding:6px">Drop jobs here</div>'}
+        <div class="icons">${j.photographer ? `<span class="pill" style="background:var(--soft)">${esc(j.photographer)}</span>` : ""}${j.xmp ? (j.draft ? '<span class="miss">Draft, check</span>' : '<span class="ok">✓ XMP</span>') : ""}${j.gallery ? '<span class="ok">✓ Gallery</span>' : ""}</div></div>`).join("") || '<div class="note" style="padding:6px">Drop jobs here</div>'}
     </div>`; }).join("")}</div>`;
 }
 
@@ -282,6 +285,9 @@ function openJob(j){
   $("#dlgTitle").textContent = j ? title(j) : "New job";
   [...F.elements].forEach(el => { if (el.name) el.value = EDIT[el.name] ?? ""; });
   XMP = EDIT.xmp || null; showXmp();
+  const cf = EDIT.crewFiles || [];   // made by the builder's Save to job board, one per crew member
+  $("#crewFiles").hidden = !cf.length;
+  $("#crewFiles").innerHTML = cf.length ? `<div class="sec" style="margin-top:0">Crew templates</div>` + cf.map((c, i) => `<div class="xmpbox" style="margin:6px 0"><div style="flex:1;min-width:200px"><b>${esc(c.name)}</b><div class="note" style="font-family:ui-monospace,Menlo,monospace">${esc(c.filename)}</div></div><button type="button" class="ghost" data-crewdl="${i}">Download .XMP</button><button type="button" class="ghost" data-crewcopy="${i}">Copy file name</button></div>`).join("") : "";
   $("#fileName").dataset.auto = EDIT.filename ? "" : "1";
   if (!EDIT.filename) $("#fileName").value = fileNameFor(EDIT);
   $("#delBtn").hidden = !j;
@@ -294,6 +300,11 @@ F.addEventListener("submit", e => {
   EDIT.xmp = XMP;
   const i = JOBS.findIndex(j => j.id === EDIT.id); if (i >= 0) JOBS[i] = EDIT; else JOBS.push(EDIT);
   save(); render();
+});
+$("#crewFiles").addEventListener("click", async e => {
+  const d = e.target.closest("[data-crewdl]"), c = e.target.closest("[data-crewcopy]"), cf = EDIT.crewFiles || [];
+  if (d){ const f = cf[+d.dataset.crewdl]; saveFile(f.xmp.text, f.xmp.name, "application/rdf+xml"); }
+  if (c){ const f = cf[+c.dataset.crewcopy]; try { await navigator.clipboard.writeText(f.filename); c.textContent = "Copied ✓"; } catch(err){ c.textContent = f.filename; } }
 });
 $("#cancelBtn").onclick = () => $("#dlg").close();
 $("#delBtn").onclick = () => {
@@ -336,7 +347,7 @@ $("#fileName").addEventListener("input", e => e.target.dataset.auto = "");
 
 // Open this job in the metadata builder (same link format the booking form makes)
 function builderLink(j){
-  const pick = { type:j.type, name:j.name, org:j.org, subjects:j.subjects, keywords:j.keywords, date:j.date, venue:j.venue, address:j.address, city:j.city, state:j.state, photographer:j.photographer };
+  const pick = { type:j.type, name:j.name, org:j.org, subjects:j.subjects, keywords:j.keywords, theme:j.theme, date:j.date, venue:j.venue, address:j.address, city:j.city, state:j.state, photographer:j.photographer };
   return "index.html?book=" + btoa(unescape(encodeURIComponent(JSON.stringify(pick)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 $("#toBuilder").onclick = () => { [...F.elements].forEach(el => { if (el.name) EDIT[el.name] = el.value.trim(); }); window.open(builderLink(EDIT), "_blank"); };
@@ -359,7 +370,7 @@ function emailText(raw){
   return t.replace(/\n--[^\n]*--\s*$/, "").trim();
 }
 // Reads the email's "Label:" / value lines; the builder link fills anything missing.
-const EMAIL = { "name":"contact", "org":"org", "department":"department", "email":"email", "phone":"phone", "dayof name":"dayofName", "dayof phone":"dayofPhone", "type":"type", "event name":"name", "theme":"theme",
+const EMAIL = { "name":"contact", "org":"org", "department":"department", "email":"email", "phone":"phone", "dayof name":"dayofName", "dayof phone":"dayofPhone", "type":"type", "event name":"name", "theme":"theme", "ref":"ref",
   "photographer":"photographer", "subjects":"subjects", "date":"date", "start":"start", "end":"end", "duration":"duration", "venue":"venue", "address":"address", "city":"city", "state":"state",
   "coverage":"coverage", "deadline":"deadline", "usage":"usage", "keywords":"keywords", "shotlist":"shotlist", "notes":"notes" };
 function readEmail(t){
@@ -380,7 +391,7 @@ $("#linkOk").onclick = e => {
   if (!d.org && !d.name && !d.date){ e.preventDefault(); $("#linkErr").textContent = "That doesn't look like a booking email or link."; return; }
   const dup = JOBS.find(j => j.date === (d.date || "") && (j.org || "") === (d.org || "") && (j.name || "") === (d.name || ""));
   if (dup){ e.preventDefault(); $("#linkErr").textContent = "That booking is already on the board. Opening it."; setTimeout(() => { $("#linkDlg").close(); openJob(dup); }, 900); return; }
-  const F2 = ["type","name","theme","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"];
+  const F2 = ["ref","crew","type","name","theme","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"];
   const j = { id:uid(), status:"Requested", created:new Date().toISOString() }; F2.forEach(k => j[k] = d[k] || ""); if (!TYPES[j.type]) j.type = "event";
   JOBS.push(j); save(); render(); setTimeout(() => openJob(j), 50);
 };
@@ -425,7 +436,7 @@ $("#importFile").onchange = e => {
 const FROM_FORM = { name:"contact", event_name:"name" };
 function jobFromBooking(b){
   const j = { id:uid(), status:"Requested", created:b.created || new Date().toISOString(), sub:b.sub };
-  ["type","name","theme","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"].forEach(k => j[k] = "");
+  ["ref","crew","type","name","theme","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"].forEach(k => j[k] = "");
   Object.entries(b).forEach(([k, v]) => { const to = FROM_FORM[k] || k; if (to in j && to !== "id" && to !== "status" && v) j[to] = String(v).trim(); });
   j.dayof = [b.dayof_name, b.dayof_phone].filter(Boolean).join(" · ");
   if (!TYPES[j.type]) j.type = "event";
@@ -451,11 +462,33 @@ async function sync(){
     save(); render();
     $("#syncNote").textContent = "Synced across your devices. New bookings appear here by themselves.";
     if (added) alertNote(`${added} new booking${added === 1 ? "" : "s"} added from the booking form.`);
+    draftNew();
   } catch(e){}
+}
+// New bookings get a draft template: the builder runs hidden, builds from the booking and saves it here as "Draft, check".
+const DRAFTING = new Set(); let draftQ = Promise.resolve();
+function draftNew(){
+  const todo = JOBS.filter(j => j.sub && !j.xmp && !j.draftTried && !DRAFTING.has(j.id) && (j.org || j.name) && j.date);
+  todo.forEach(j => { DRAFTING.add(j.id); draftQ = draftQ.then(() => draftOne(j)); });
+  if (todo.length) render();
+}
+function draftOne(j){
+  return new Promise(done => {
+    setTimeout(() => {   // let the board's own save land first
+      const f = document.createElement("iframe"); f.hidden = true; f.setAttribute("aria-hidden", "true");
+      const finish = res => { window.removeEventListener("message", on); clearTimeout(t); f.remove(); DRAFTING.delete(j.id); sync().then(() => { const k = JOBS.find(x => x.id === j.id); if (k && !k.xmp){ k.draftTried = true; save(); render(); } done(); }); };
+      const on = e => { if (e.origin === location.origin && e.data?.draftDone === j.id) finish(e.data.res); };
+      const t = setTimeout(() => finish("timeout"), 90000);
+      window.addEventListener("message", on);
+      f.src = builderLink(j).replace(/^https?:\/\/[^/]+\//, "") + "&draft=" + encodeURIComponent(j.id);
+      document.body.appendChild(f);
+    }, 1500);
+  });
 }
 $("#lockForm").addEventListener("submit", e => { e.preventDefault(); try { localStorage.setItem("ashe.boardKey", $("#lockIn").value.trim()); } catch(err){} $("#lockIn").value = ""; sync(); });
 
 render(); sync();
 </script>
+<p style="text-align:center;font-size:12px;color:var(--muted);margin:40px 0 24px"><a style="color:inherit" href="https://www.netlify.com" target="_blank" rel="noopener">This site is powered by Netlify</a></p>
 </body>
 </html>

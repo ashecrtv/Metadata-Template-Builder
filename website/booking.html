@@ -54,8 +54,8 @@ button:disabled{opacity:.6;cursor:default}
 #vlist li[aria-selected=true],#vlist li:hover{background:var(--bg)}
 @media (max-width:600px){.grid{grid-template-columns:1fr}.types{grid-template-columns:1fr 1fr}}
 .owner{position:relative;display:inline-block}.owner>button{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer}.owner-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}.owner-menu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}.owner-menu a:hover{background:var(--soft,var(--bg))}.owner-menu a[aria-current]{font-weight:700}.owner-menu[hidden]{display:none}
-.tabs{display:inline-flex;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-@media (max-width:640px){header{flex-wrap:wrap;gap:10px}header .ext{display:none}}
+.tabs{display:inline-flex;flex-wrap:wrap;max-width:100%;gap:2px;background:var(--soft,var(--bg));border:1px solid var(--line);border-radius:10px;padding:3px}.tabs a{padding:6px 12px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}.tabs a:hover{color:var(--ink)}.tabs a[aria-current]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+@media (max-width:640px){header{flex-wrap:wrap;gap:10px}header .ext{display:none}.tabs a{padding:6px 9px}}
 </style>
 </head>
 <body>
@@ -68,6 +68,8 @@ button:disabled{opacity:.6;cursor:default}
 
   <form id="book" name="booking" method="POST" data-netlify="true" netlify-honeypot="company_site">
     <input type="hidden" name="form-name" value="booking">
+    <input type="hidden" name="open_in_builder" id="shortLink">
+    <input type="hidden" name="ref" id="refCode">
     <input type="hidden" name="builder_link" id="builderLink">
     <p hidden><label>Leave this empty<input maxlength="200" name="company_site"></label></p>
 
@@ -257,7 +259,9 @@ F.addEventListener("submit", async e => {
     $("#status").textContent = `${new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" })} is in the past. If that's right, click Yes, send it.`;
     $("#send").textContent = "Yes, send it"; return;
   }
-  const link = builderLink(d); $("#builderLink").value = link;
+  const ref = Array.from(crypto.getRandomValues(new Uint8Array(6)), n => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");   // no 0/O or 1/I
+  $("#refCode").value = ref; $("#shortLink").value = new URL("index.html?ref=" + ref, location.href).href;
+  const link = builderLink(d); $("#builderLink").value = link;   // long link kept as a backup: it works without the job board
   $("#send").disabled = true; $("#send").textContent = "Send request"; $("#status").textContent = "Sending…";
   let sent = false;
   try {
@@ -271,5 +275,6 @@ F.addEventListener("submit", async e => {
   if (!sent){ $("#localNote").hidden = false; $("#openBuilder").href = link; }
 });
 </script>
+<p style="text-align:center;font-size:12px;color:var(--muted);margin:40px 0 24px"><a style="color:inherit" href="https://www.netlify.com" target="_blank" rel="noopener">This site is powered by Netlify</a></p>
 </body>
 </html>

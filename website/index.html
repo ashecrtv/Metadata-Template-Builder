@@ -285,6 +285,7 @@ body.noscroll{overflow:hidden}
   <section class="step" id="step1">
     <div class="step-h"><span class="n">Step 1</span><h2>Find the shoot</h2></div>
     <p class="step-help">Type a matchup (“2026 WNBA Finals Game 4 Valkyries vs Dream”, “49ers vs Falcons”, “Lakers vs Hawks”) or browse a league by date. Not a listed game? Set up a custom shoot.</p>
+    <div class="panel small" id="refNote" hidden></div>
     <div class="panel" id="startPick">
       <b>What are you shooting?</b>
       <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px">
@@ -494,7 +495,7 @@ body.noscroll{overflow:hidden}
 </main>
 <footer class="site">
   <span class="row" style="gap:10px"><span class="logo sm">ASHE<sup>®</sup></span><span>Made by <a href="https://ashergreenephoto.com" target="_blank" rel="noopener">Asher Greene Photo</a> · Atlanta, Georgia</span></span>
-  <span>Your settings stay on this device.</span>
+  <span>Your settings stay on this device. · <a href="https://github.com/ashecrtv/Metadata-Template-Builder" target="_blank" rel="noopener">Code on GitHub</a> · <a href="https://www.netlify.com" target="_blank" rel="noopener">This site is powered by Netlify</a></span>
 </footer>
 <!-- Shoot gallery overlay: filled by openGallery() from a WORK card's gallery list -->
 <div class="gal" id="gallery" hidden role="dialog" aria-modal="true" aria-labelledby="galTitle">
@@ -938,7 +939,7 @@ document.addEventListener("click", e => {
 async function exportBatch(){
   const out = $("#batchOut"), list = [...S.batch].sort((x, y) => evInfo(S.games[x]).ymd.localeCompare(evInfo(S.games[y]).ymd)), lead = (S.batchLead || "").trim();
   if (!window.JSZip) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
-  const zip = new JSZip(), names = [], keepTicks = new Set(S.batch);
+  const zip = new JSZip(), names = [], keepTicks = new Set(S.batch), season = new Map(), clash = [];
   for (const [n, i] of list.entries()){
     out.textContent = `Making ${n + 1} of ${list.length}…`;
     S.gameConfirmed = false; await pickGame(i); S.batch = keepTicks;
@@ -951,10 +952,21 @@ async function exportBatch(){
       renderAll();
     }
     zip.file(xmpFileName(), xmpText());
-    zip.file("Code Replacements/" + gameFileName(), fileText(S.sides));
+    const codes = fileText(S.sides);
+    zip.file("Code Replacements/" + gameFileName(), codes);
+    // Season file: one line per code across every game. Cells that change from game to game ("during the game against …") are left blank there.
+    for (const line of codes.split("\n").filter(Boolean)){
+      const cells = line.split("\t"), key = cells[0], had = season.get(key);
+      if (!had){ season.set(key, cells); continue; }
+      if (had[1] !== cells[1] && !clash.some(c => c.startsWith(key + ":"))) clash.push(`${key}: ${had[1]} / ${cells[1]}`);
+      had.forEach((c, k) => { if (k > 1 && c !== cells[k]) had[k] = ""; });
+    }
     names.push(`${g.date}  ${ingestName()}`);
   }
   zip.file("Ingest file names.txt", names.join("\n") + "\n");
+  const year = (evInfo(S.games[list[0]]).ymd || "").slice(0, 4), teamName = S.sides[0]?.teamName || "Team";
+  zip.file(`${year} ${teamName} Season_Code Replacements.txt`, [...season.values()].map(c => c.join("\t").replace(/\t+$/, "")).join("\n") + "\n");
+  if (clash.length) zip.file("Code clashes to check.txt", "These codes mean different people in different games. The season file keeps the first one; use the per-game file for the others.\n\n" + clash.join("\n") + "\n");
   const blob = await zip.generateAsync({ type:"blob" }), a = document.createElement("a"), team = (S.sides[0]?.teamName || "Batch").replace(/\W+/g, "");
   a.href = URL.createObjectURL(blob); a.download = `${team}_${list.length} templates.zip`; document.body.appendChild(a); a.click(); a.remove();
   S.lastBatch = blob; out.textContent = `Done: ${list.length} templates, code files and ingest names in one .zip.`;
@@ -2510,7 +2522,7 @@ function emailText(raw){
   return t.replace(/\n--[^\n]*--\s*$/, "").trim();
 }
 // A booking email (it holds a builder link) loads the whole booking; anything else is read for event details.
-function smartRead(raw){ const t = emailText(raw); $("#cPaste").value = t; const m = t.match(/[?&]book=([A-Za-z0-9_-]+)/); if (m) return loadBooking(m[1]); return applyParsed(parseEventText(t)); }
+function smartRead(raw){ const t = emailText(raw); $("#cPaste").value = t; const m = t.match(/[?&]book=([A-Za-z0-9_-]+)/); if (m) return loadBooking(m[1]); const r = t.match(/[?&]ref=([A-Z0-9]{6})\b/); if (r) return loadRef(r[1]); return applyParsed(parseEventText(t)); }
 // Drop a .txt / .eml / .ics file straight onto the paste box
 $("#cPaste").addEventListener("dragover", e => e.preventDefault());
 $("#cPaste").addEventListener("drop", async e => { const f = e.dataTransfer.files[0]; if (!f || !/\.(txt|eml|ics|text)$/i.test(f.name) && !f.type.startsWith("text")) return; e.preventDefault(); smartRead(await f.text()); });
@@ -2555,11 +2567,11 @@ $("#gStyle").value = STYLES[CFG.style] ? CFG.style : "getty";
 $("#browseDate").value = new Date().toISOString().slice(0,10);
 $("#ascii").checked = !!CFG.ascii;
 renderCols();
-loadAll().then(()=>{ const P = new URLSearchParams(location.search), q = P.get("q"); if (P.get("book")) loadBooking(P.get("book")); else if (q){ $("#q").value = q; search(); } });
+loadAll().then(()=>{ const P = new URLSearchParams(location.search), q = P.get("q"); if (P.get("draft")) runDraft(P.get("book"), P.get("draft")); else if (P.get("book")) loadBooking(P.get("book")); else if (P.get("ref")) loadRef(P.get("ref")); else if (q){ $("#q").value = q; search(); } });
 /* A booking from booking.html arrives as ?book=<base64 JSON>: fill the client, keywords and custom shoot, then build. */
 
 /* ---------- Save to job board: the template + file name go onto the booking's job (same site, passcode-locked API) ---------- */
-async function saveToBoard(){
+async function saveToBoard(opts = {}){
   const out = $("#toBoardOut"), keyIn = $("#boardKeyIn");
   if (!S.sides[0] && !S.custom){ out.textContent = "Build the template first."; return; }
   let key = ""; try { key = localStorage.getItem("ashe.boardKey") || ""; } catch(e){}
@@ -2574,7 +2586,8 @@ async function saveToBoard(){
     const d = await r.json(), jobs = d.jobs || [], seen = d.seen || [], b = S.booking || {};
     const same = (x, y) => String(x || "").trim().toLowerCase() === String(y || "").trim().toLowerCase();
     const want = { date:b.date || $("#gDate")?.value || "", org:b.org || $("#gClient").value.trim(), name:b.name || "" };
-    let j = jobs.find(x => same(x.date, want.date) && same(x.org, want.org) && (!want.name || same(x.name, want.name)));
+    let j = (opts.jobId && jobs.find(x => x.id === opts.jobId)) || jobs.find(x => same(x.date, want.date) && same(x.org, want.org) && (!want.name || same(x.name, want.name)));
+    if (opts.draft && j && j.xmp) return "kept";   // never overwrite a template that's already there
     if (!j){   // the board hasn't pulled this booking in yet: make the job now, from the booking request if it's waiting
       const bk = (d.bookings || []).find(x => same(x.date, want.date) && same(x.org, want.org) && (!want.name || same(x.event_name, want.name)));
       j = { id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), status:"Requested", created:new Date().toISOString(), type:b.type || "event",
@@ -2585,11 +2598,19 @@ async function saveToBoard(){
       jobs.push(j);
     }
     j.xmp = { name:xmpFileName(), text:xmpText() };
+    j.draft = !!opts.draft;   // drafts are marked "Draft, check" until you save from the builder yourself
     j.filename = $("#ingestOut").value.trim() || ingestName();
+    const crew = String(j.crew || "").split(",").map(x => x.trim()).filter(x => x && x !== $("#gPhotog").value.trim());
+    if (crew.length){   // swap the photographer in, read the template and name, swap back
+      const box = $("#gPhotog"), lead = box.value, put = v => { box.value = v; box.dispatchEvent(new Event("input", { bubbles:true })); box.dispatchEvent(new Event("change", { bubbles:true })); };
+      j.crewFiles = crew.map(n => { put(n); renderAll(); return { name:n, xmp:{ name:xmpFileName(), text:xmpText() }, filename:ingestName() }; });
+      put(lead); renderAll();
+    }
     const w = await fetch("/api/jobs", { method:"PUT", headers:H, body:JSON.stringify({ jobs, seen }) });
     if (!w.ok) throw new Error(w.status);
+    if (opts.draft) return "saved";
     keyIn.hidden = true;
-    out.innerHTML = `Saved to <b>${esc(j.name || j.org)}</b>: ${esc(j.xmp.name)} and ${esc(j.filename)}. <a href="board.html">Open the job board →</a>`;
+    out.innerHTML = `Saved to <b>${esc(j.name || j.org)}</b>: ${esc(j.xmp.name)} and ${esc(j.filename)}${j.crewFiles?.length ? `, plus ${j.crewFiles.length} crew template${j.crewFiles.length === 1 ? "" : "s"} (${esc(j.crewFiles.map(c => c.name).join(", "))})` : ""}. <a href="board.html">Open the job board →</a>`;
   } catch(e){ out.textContent = "Couldn't reach the job board (it only works on the live site). Download the template instead."; }
 }
 $("#boardForm").addEventListener("submit", e => { e.preventDefault(); saveToBoard(); });
@@ -2610,8 +2631,36 @@ document.addEventListener("click", e => {
   if (e.target.id === "startOver"){ location.href = location.pathname; }
 });
 
+// Short link from the booking email: index.html?ref=K7Q2M9. The details come from the job board.
+async function loadRef(ref){
+  let key = ""; try { key = localStorage.getItem("ashe.boardKey") || ""; } catch(e){}
+  const note = $("#refNote"); note.hidden = false; $("#findPanel").hidden = false;
+  if (!key){ note.innerHTML = `This booking link needs your owner passcode once on this device. <form id="refKeyForm" style="display:inline-flex;gap:6px"><input type="password" id="refKey" placeholder="Owner passcode" autocomplete="current-password"><button class="primary small">Open booking</button></form>`; return; }
+  note.textContent = "Opening booking " + ref + "…";
+  try {
+    const r = await fetch("/api/jobs", { headers:{ "x-board-key":key } });
+    if (r.status === 401){ try { localStorage.removeItem("ashe.boardKey"); } catch(e){} return loadRef(ref); }
+    const d = await r.json(), same = x => String(x || "").toUpperCase() === ref.toUpperCase();
+    const bk = (d.bookings || []).find(x => same(x.ref)), job = (d.jobs || []).find(x => same(x.ref));
+    if (!bk && !job){ note.textContent = `Booking ${ref} isn't on the job board yet. Use the long link at the bottom of the email instead.`; return; }
+    const src = bk || {}, j = job || {};
+    note.hidden = true;
+    return loadBookingObj({ type:j.type || src.type, name:j.name || src.event_name, org:j.org || src.org, subjects:j.subjects || src.subjects, keywords:j.keywords || src.keywords, theme:j.theme || src.theme,
+      date:j.date || src.date, venue:j.venue || src.venue, address:j.address || src.address, photographer:j.photographer || src.photographer, city:j.city || src.city, state:j.state || src.state, ref });
+  } catch(e){ note.textContent = "Couldn't reach the job board. Use the long link at the bottom of the email instead."; }
+}
+document.addEventListener("submit", e => { if (e.target.id !== "refKeyForm") return; e.preventDefault(); try { localStorage.setItem("ashe.boardKey", $("#refKey").value.trim()); } catch(err){} loadRef(new URLSearchParams(location.search).get("ref")); });
+// The job board opens the builder hidden, with ?book=…&draft=<job id>, for each new booking.
+async function runDraft(code, jobId){
+  let res = "failed";
+  try { await loadBooking(code); res = (S.sides[0] || S.custom) ? await saveToBoard({ draft:true, jobId }) : "nothing to build"; } catch(e){}
+  try { parent.postMessage({ draftDone:jobId, res }, location.origin); } catch(e){}
+}
 async function loadBooking(code){
   let b; try { b = JSON.parse(decodeURIComponent(escape(atob(code.replace(/-/g,"+").replace(/_/g,"/"))))); } catch(e){ return; }
+  return loadBookingObj(b);
+}
+async function loadBookingObj(b){
   S.booking = b; $("#findPanel").hidden = false;
   const set = (id, val) => { const el = $("#"+id); if (el && val){ el.value = val; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
   set("gClient", b.org);

@@ -6,6 +6,13 @@ Everything is in **`website/`**, one Netlify site with three pages:
 - **Metadata builder** (`index.html`): Getty, AP, Imagn, Icon and ZUMA style captions, code replacements, keywords, an XMP template and an ingest file name.
 - **Booking form** (`booking.html`): clients request a shoot. You get an email with a link that builds the template.
 - **Job board** (`board.html`): booking requests show up here by themselves, and your jobs sync across your devices. The page is public, but its data is locked with your own passcode.
+- **Learn** (`learn.html`): why metadata matters, a before-and-after search demo, and a Photo Mechanic guide.
+
+Also:
+- **Batch export:** tick games, or a whole season's home games, and get every template, the code files (per game and one for the season) and the ingest names in one .zip.
+- **Crew:** add photographers to a job, and each gets their own template and ingest name.
+- **Drafts:** new bookings arrive on the board with a draft template, ready for you to check.
+- **Smaller schools:** paste an official athletics roster page link (Sidearm, PrestoSports and similar), and the builder reads the roster.
 
 ## Run your own copy
 1. Fork this repo.

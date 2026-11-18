@@ -7,6 +7,7 @@ export default async (req) => {
   let url;
   try { url = new URL(new URL(req.url).searchParams.get("url") || ""); } catch { return json({ error: "That isn't a link." }, 400); }
   if (!/^https?:$/.test(url.protocol) || PRIVATE.test(url.hostname)) return json({ error: "Only public web pages can be read." }, 400);
+  if (!/roster|team|staff|bio/i.test(url.pathname + url.search)) return json({ error: "Paste the team's roster page (its address usually has /roster in it)." }, 400);   // not a general web fetcher
   try {
     const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(8000), headers: { "user-agent": "Mozilla/5.0 (roster reader)" } });
     if (!r.ok) return json({ error: `That page answered ${r.status}.` }, 502);
