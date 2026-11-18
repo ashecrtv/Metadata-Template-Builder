@@ -406,6 +406,12 @@ body.noscroll{overflow:hidden}
           <button class="primary" id="dlXmp">Download template (.XMP)</button>
         </div>
         <div class="panel">
+          <h2 style="margin:0">Job board</h2>
+          <p class="small muted">Attach this template and the ingest file name to the job, so they're waiting on the board.</p>
+          <form id="boardForm" class="row" style="gap:8px;flex-wrap:wrap"><input type="password" id="boardKeyIn" placeholder="Owner passcode" autocomplete="current-password" style="flex:1;min-width:140px" hidden><button class="primary" id="toBoard">Save to job board</button></form>
+          <div class="small muted" id="toBoardOut" style="margin-top:6px"></div>
+        </div>
+        <div class="panel">
           <h2 style="margin:0">Ingest file name</h2>
           <p class="small muted">Ingest ▸ Rename as: YYYYMMDD_CLIENT_AWAYvsHOME_INITIALS_{sequence}</p>
           <input type="text" id="ingestOut" spellcheck="false" style="width:100%;font-family:var(--mono);font-size:13px" title="Click to edit">
@@ -2476,8 +2482,46 @@ $("#ascii").checked = !!CFG.ascii;
 renderCols();
 loadAll().then(()=>{ const P = new URLSearchParams(location.search), q = P.get("q"); if (P.get("book")) loadBooking(P.get("book")); else if (q){ $("#q").value = q; search(); } });
 /* A booking from booking.html arrives as ?book=<base64 JSON>: fill the client, keywords and custom shoot, then build. */
+
+/* ---------- Save to job board: the template + file name go onto the booking's job (same site, passcode-locked API) ---------- */
+async function saveToBoard(){
+  const out = $("#toBoardOut"), keyIn = $("#boardKeyIn");
+  if (!S.sides[0] && !S.custom){ out.textContent = "Build the template first."; return; }
+  let key = ""; try { key = localStorage.getItem("ashe.boardKey") || ""; } catch(e){}
+  if (keyIn.value.trim()){ key = keyIn.value.trim(); try { localStorage.setItem("ashe.boardKey", key); } catch(e){} keyIn.value = ""; }
+  if (!key){ keyIn.hidden = false; keyIn.focus(); out.textContent = "Enter your passcode once on this device."; return; }
+  out.textContent = "Saving…";
+  try {
+    const H = { "x-board-key":key, "Content-Type":"application/json" };
+    const r = await fetch("/api/jobs", { headers:H });
+    if (r.status === 401){ try { localStorage.removeItem("ashe.boardKey"); } catch(e){} keyIn.hidden = false; keyIn.focus(); out.textContent = "Wrong passcode. Try again."; return; }
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json(), jobs = d.jobs || [], seen = d.seen || [], b = S.booking || {};
+    const same = (x, y) => String(x || "").trim().toLowerCase() === String(y || "").trim().toLowerCase();
+    const want = { date:b.date || $("#gDate")?.value || "", org:b.org || $("#gClient").value.trim(), name:b.name || "" };
+    let j = jobs.find(x => same(x.date, want.date) && same(x.org, want.org) && (!want.name || same(x.name, want.name)));
+    if (!j){   // the board hasn't pulled this booking in yet: make the job now, from the booking request if it's waiting
+      const bk = (d.bookings || []).find(x => same(x.date, want.date) && same(x.org, want.org) && (!want.name || same(x.event_name, want.name)));
+      j = { id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), status:"Requested", created:new Date().toISOString(), type:b.type || "event",
+        name:want.name, org:want.org, date:want.date, venue:b.venue || "", address:b.address || "", city:b.city || "", state:b.state || "", subjects:b.subjects || "", keywords:b.keywords || "", photographer:b.photographer || "" };
+      if (bk){ Object.assign(j, { sub:bk.sub, contact:bk.name || "", email:bk.email || "", phone:bk.phone || "", department:bk.department || "", start:bk.start || "", end:bk.end || "",
+        duration:bk.duration || "", coverage:bk.coverage || "", deadline:bk.deadline || "", usage:bk.usage || "", shotlist:bk.shotlist || "", notes:bk.notes || "",
+        dayof:[bk.dayof_name, bk.dayof_phone].filter(Boolean).join(" · ") }); seen.push(bk.sub); }
+      jobs.push(j);
+    }
+    j.xmp = { name:xmpFileName(), text:xmpText() };
+    j.filename = $("#ingestOut").value.trim() || ingestName();
+    const w = await fetch("/api/jobs", { method:"PUT", headers:H, body:JSON.stringify({ jobs, seen }) });
+    if (!w.ok) throw new Error(w.status);
+    keyIn.hidden = true;
+    out.innerHTML = `Saved to <b>${esc(j.name || j.org)}</b>: ${esc(j.xmp.name)} and ${esc(j.filename)}. <a href="board.html">Open the job board →</a>`;
+  } catch(e){ out.textContent = "Couldn't reach the job board (it only works on the live site). Download the template instead."; }
+}
+$("#boardForm").addEventListener("submit", e => { e.preventDefault(); saveToBoard(); });
+
 async function loadBooking(code){
   let b; try { b = JSON.parse(decodeURIComponent(escape(atob(code.replace(/-/g,"+").replace(/_/g,"/"))))); } catch(e){ return; }
+  S.booking = b;
   const set = (id, val) => { const el = $("#"+id); if (el && val){ el.value = val; el.dispatchEvent(new Event("input", { bubbles:true })); el.dispatchEvent(new Event("change", { bubbles:true })); } };
   set("gClient", b.org);
   if (b.photographer && !$("#gPhotog").value.trim()) set("gPhotog", b.photographer);   // preferred photographer, only if none is set on this device
