@@ -522,6 +522,8 @@ async function sync(){
     save(); render();
     $("#syncNote").textContent = "Synced across your devices. New bookings appear here by themselves.";
     if (added) alertNote(`${added} new booking${added === 1 ? "" : "s"} added from the booking form.`);
+    const want = new URLSearchParams(location.search).get("job"), wj = want && JOBS.find(j => j.id === want);   // board.html?job=<id> opens that job
+    if (wj) openJob(wj);
     draftNew();
   } catch(e){}
 }

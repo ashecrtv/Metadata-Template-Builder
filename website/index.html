@@ -434,6 +434,10 @@ body.noscroll{overflow:hidden}
     <section class="step">
       <div class="step-h"><span class="n">Step 4</span><h2>Download</h2></div>
       <p class="step-help">Load these into Photo Mechanic: the metadata template on ingest, and, for games, the code file under Code Replacements and the Structured Keywords list.</p>
+      <div class="panel" id="sendPanel" style="margin-bottom:16px">
+        <div class="row" style="gap:10px;flex-wrap:wrap;align-items:center"><button class="primary" id="sendBoard" type="button">Confirm &amp; send to board</button><span class="small muted">One click: saves this job to the board and gives you everything to download below.</span></div>
+        <div id="sendCard" style="margin-top:12px" hidden></div>
+      </div>
       <div class="dl-grid">
         <div class="panel">
           <h2 style="margin:0">Metadata template</h2>
@@ -2850,7 +2854,7 @@ async function saveToBoard(opts = {}){
     if (w.status === 409 && (opts.tries || 0) < 3) return saveToBoard({ ...opts, tries:(opts.tries || 0) + 1 });   // someone else saved: redo on the latest
     if (!w.ok) throw new Error(w.status);
     if (opts.draft) return "saved";
-    keyIn.hidden = true;
+    keyIn.hidden = true; S.sent = { id:j.id, crew:j.crewFiles || [] };
     out.innerHTML = `Saved to <b>${esc(j.name || j.org)}</b>: ${esc(j.xmp.name)} and ${esc(j.filename)}${j.crewFiles?.length ? `, plus ${j.crewFiles.length} crew template${j.crewFiles.length === 1 ? "" : "s"} (${esc(j.crewFiles.map(c => c.name).join(", "))})` : ""}. <a href="board.html">Open the job board →</a>`;
   } catch(e){ out.textContent = "Couldn't reach the job board (it only works on the live site). Download the template instead."; }
 }
@@ -2869,12 +2873,36 @@ async function saveToBoardOpen(opts = {}){
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
     if (opts.draft) return "saved";
+    S.sent = { id:d.id || "", kept:!!d.kept, crew:crewTemplates() };
     const crew = crewList().map(c => c.name);
     out.innerHTML = `Saved to <b>${esc(fill.name || fill.org)}</b>: ${esc(xmpFileName())}${crew.length ? `, plus ${crew.length} crew template${crew.length === 1 ? "" : "s"} (${esc(crew.join(", "))})` : ""}. <a href="board.html">Open the job board →</a>
       <div class="small muted">Already had a template? It's kept as it was; open the board to replace it.</div>`;
   } catch(e){ out.textContent = "Couldn't reach the job board (it only works on the live site). Download the template instead."; }
 }
 $("#boardForm").addEventListener("submit", e => { e.preventDefault(); saveToBoard(); });
+// Confirm & send: save to the board, then one card with every file for this job.
+document.addEventListener("click", async e => {
+  const t = e.target.closest("#sendBoard, [data-send]"); if (!t) return;
+  const card = $("#sendCard");
+  if (t.id === "sendBoard"){
+    if (!S.sides[0] && !S.custom){ card.hidden = false; card.textContent = "Build the template first (Steps 1 to 3)."; return; }
+    t.disabled = true; card.hidden = false; card.textContent = "Sending to the board…"; S.sent = null;
+    await saveToBoard(); t.disabled = false;
+    const s = S.sent, game = !S.custom && S.sides[1], name = $("#ingestOut").value.trim() || ingestName(), crew = s?.crew || [];
+    S.sendFiles = crew;
+    card.innerHTML = `<div class="small" style="margin-bottom:10px">${s ? `<b>Sent to the board.</b>${s.kept ? " This job already had a template, so the board kept that one." : ""}` : esc($("#toBoardOut").textContent)}</div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" data-send="xmp" type="button">Download template (.XMP)</button>${game ? `<button data-send="code" type="button">Download code replacement file</button>` : ""}</div>
+      <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><span class="small muted">Ingest file name</span><code style="font-family:var(--mono);font-size:13px;word-break:break-all">${esc(name)}</code><button class="small" data-send="name" type="button">Copy</button></div>
+      ${crew.length ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><span class="small muted">Crew templates</span>${crew.map((c, i) => `<button class="small" data-send="crew" data-i="${i}" type="button">${esc(c.name)}</button>`).join("")}</div>` : ""}
+      ${s ? `<a href="board.html${s.id ? "?job=" + encodeURIComponent(s.id) : ""}">Open this job on the board →</a>` : ""}`;
+    return;
+  }
+  const k = t.dataset.send;
+  if (k === "xmp") return download(xmpText(), xmpFileName());
+  if (k === "code") return download(fileText(S.sides), gameFileName());
+  if (k === "name") return copy($("#ingestOut").value.trim() || ingestName(), t);
+  if (k === "crew"){ const c = S.sendFiles[+t.dataset.i]; if (c) download(c.xmp.text, c.xmp.name || c.name + ".XMP"); }
+});
 
 /* ---------- Start: ask what the shoot is; Start over clears everything (your saved settings stay) ---------- */
 document.addEventListener("click", e => {

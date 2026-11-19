@@ -25,7 +25,7 @@ export default async (req) => {
     const all = await Promise.all(keys.map(k => store.get(k, { type: "json" }).catch(() => null)));
     return all.find(v => v && same(v.date, want.date) && same(v.org, want.org) && (!want.name || same(v.event_name, want.name))) || null;
   };
-  let ref = "";   // reserved once, so a retry doesn't burn an extra ASHE number
+  let ref = "", jobId = "", kept = false;   // reserved once, so a retry doesn't burn an extra ASHE number
   try {
     const out = await updateBoard(store, async data => {
       const { jobs, seen } = data;
@@ -39,6 +39,7 @@ export default async (req) => {
         if (!j.ref) j.ref = ref || (ref = await nextRef(store));
         jobs.push(j);
       }
+      jobId = j.id; kept = !!j.xmp;
       for (const k of FILL) if (fill[k] && !String(j[k] || "").trim()) j[k] = str(fill[k]);   // only blanks
       if (!j.xmp) { j.xmp = { name: str(b.xmp.name), text: String(b.xmp.text) }; j.draft = !!b.draft; if (b.filename && !j.filename) j.filename = str(b.filename); }   // never replaces a template
       const have = new Set((j.crewFiles || []).map(c => c.name));
@@ -48,7 +49,7 @@ export default async (req) => {
       return {};
     });
     if (out?.full) return new Response("Busy, try later", { status: 429 });
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, id: jobId, kept });
   } catch (e) { return new Response("Busy, try again", { status: 503 }); }
 };
 export const config = { path: "/api/jobs-add" };
