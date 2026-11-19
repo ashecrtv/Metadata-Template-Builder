@@ -55,9 +55,9 @@ button:disabled{opacity:.6;cursor:default}
 .done a{color:var(--accent);font-weight:700}
 .req{color:var(--err)}
 .vwrap{position:relative;margin-bottom:14px}
-#vlist{position:absolute;z-index:5;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.08);max-height:280px;overflow:auto}
-#vlist li{padding:8px 10px;border-radius:6px;cursor:pointer;font-size:14px}
-#vlist li small{display:block;color:var(--muted);font-size:12px}
+#vlist,#alist{position:absolute;z-index:5;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.08);max-height:280px;overflow:auto}
+#vlist li,#alist li{padding:8px 10px;border-radius:6px;cursor:pointer;font-size:14px}
+#vlist li small,#alist li small{display:block;color:var(--muted);font-size:12px}
 #vlist li[aria-selected=true],#vlist li:hover{background:var(--bg)}
 @media (max-width:600px){.grid{grid-template-columns:1fr}.types{grid-template-columns:1fr 1fr}}
 .owner{position:relative;display:inline-block}.owner>button{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer}.owner-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}.owner-menu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}.owner-menu a:hover{background:var(--soft,var(--bg))}.owner-menu a[aria-current]{font-weight:700}.owner-menu[hidden]{display:none}
@@ -73,7 +73,7 @@ button:disabled{opacity:.6;cursor:default}
   <h1>Book a shoot</h1>
   <p class="lede">Tell me about the job. These details go straight into captions, keywords and file names, so exact names and spellings help. Fields marked <span class="req">*</span> are required.</p>
 
-  <form id="book" name="booking" method="POST" data-netlify="true" netlify-honeypot="company_site">
+  <form id="book" name="booking" method="POST" enctype="multipart/form-data" data-netlify="true" netlify-honeypot="company_site">
     <input type="hidden" name="form-name" value="booking">
     <input type="hidden" name="open_in_builder" id="shortLink">
     <input type="hidden" name="ref" id="refCode">
@@ -99,10 +99,15 @@ button:disabled{opacity:.6;cursor:default}
         <label><input type="radio" name="type" value="event" checked><span>Event</span></label>
         <label><input type="radio" name="type" value="practice"><span>Practice</span></label>
       </div>
+      <div id="gameFind" hidden style="margin-bottom:14px">
+        <label style="margin-bottom:6px">Find the game <small>(type a team, e.g. Falcons or Morehouse)</small><input id="gameQ" maxlength="80" autocomplete="off" placeholder="Team name"></label>
+        <div id="gameRes" class="hint" style="margin:0"></div>
+        <p class="hint" style="margin:6px 0 0">Not listed? Type the matchup, date and venue below yourself, and attach the schedule or roster under Notes if you have one.</p>
+      </div>
       <label><span id="nameLabel">Event name</span> <span class="req">*</span><input maxlength="200" name="event_name" id="eventName" required placeholder="e.g. Spring Alumni Dinner"></label>
       <label>Special or themed event <span style="font-weight:400;color:var(--muted)">(optional)</span><input maxlength="120" name="theme" placeholder="e.g. Senior Night, Salute to Service, Pride Night, Home Opener"></label>
       <label>Preferred photographer <small>(optional)</small><input maxlength="200" name="photographer" placeholder="Leave blank if anyone on the team works"></label>
-      <label>Key subjects <small>(names of people, teams or sponsors to tag, comma-separated)</small><input maxlength="200" name="subjects" placeholder="e.g. Bijan Robinson, Arthur Blank, Coca-Cola"></label>
+      <label>Key Subjects and/or Keywords <small>(people, teams, sponsors or words to tag, comma-separated)</small><input maxlength="200" name="subjects" placeholder="e.g. Bijan Robinson, Arthur Blank, Coca-Cola"></label>
     </fieldset>
 
     <fieldset><legend><b>03</b>When &amp; where</legend><div class="grid">
@@ -113,7 +118,8 @@ button:disabled{opacity:.6;cursor:default}
       <div class="full vwrap"><label style="margin-bottom:0">Venue <span class="req">*</span><input maxlength="200" name="venue" id="venue" required placeholder="Start typing, e.g. Mercedes-Benz Stadium" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="vlist" aria-expanded="false"></label>
         <ul id="vlist" role="listbox" hidden></ul></div>
       <p class="hint full" id="venueHint" style="margin-top:6px">Pick a venue from the list and the address fills in. Not listed? Type the address below.</p>
-      <label class="full">Street address<input maxlength="200" name="address" id="address" autocomplete="off"></label>
+      <div class="full vwrap"><label style="margin-bottom:0">Street address <small>(start typing to search)</small><input maxlength="200" name="address" id="address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="alist" aria-expanded="false"></label>
+        <ul id="alist" role="listbox" hidden></ul></div>
       <label>City<input maxlength="200" name="city" id="city"></label>
       <label>State<input maxlength="200" name="state" id="state"></label>
       <input type="hidden" name="zip" id="zip">
@@ -128,8 +134,9 @@ button:disabled{opacity:.6;cursor:default}
     </div></fieldset>
 
     <fieldset><legend><b>05</b>Notes</legend>
-      <label>Shot list / must-gets<textarea maxlength="2000" name="shotlist" placeholder="Specific moments, groups or setups you need"></textarea></label>
-      <label>Anything else<textarea maxlength="2000" name="notes" placeholder="Parking, credentials, dress code, timeline…"></textarea></label>
+      <label>Shot List and Key Moments<textarea maxlength="2000" name="shotlist" placeholder="Specific moments, groups or setups you need"></textarea></label>
+      <label>Attach a PDF <small>(optional: schedule, roster, run of show, shot list)</small><input type="file" name="team_pdf" accept=".pdf,application/pdf"></label>
+      <label>Additional Comments<textarea maxlength="2000" name="notes" placeholder="Parking, credentials, dress code, timeline…"></textarea></label>
     </fieldset>
 
     <div class="row"><button type="submit" id="send">Send request</button><span class="note" id="status"></span></div>
@@ -230,6 +237,60 @@ L.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li
 V.addEventListener("blur", () => { setTimeout(close, 100); const k = Object.keys(VENUES).find(k => norm(k) === norm(V.value)); if (k && !$("#city").value) fill({ name:k, address:VENUES[k][2] || "", city:VENUES[k][0], state:VENUES[k][1] }); });
 ["#address","#city","#state"].forEach(id => $(id).addEventListener("input", e => delete e.target.dataset.auto));
 
+// Street address search: Google first (addresses), OpenStreetMap if Google is unavailable. Picking one fills city, state and zip.
+const A = $("#address"), AL = $("#alist"); let aopts = [], atimer = 0, aseq = 0;
+function ashow(){
+  if (!aopts.length){ AL.hidden = true; A.setAttribute("aria-expanded", "false"); return; }
+  AL.innerHTML = aopts.map((o, i) => `<li role="option" data-i="${i}">${esc(o.address)}<small>${esc([o.city, o.state, o.zip].filter(Boolean).join(", "))}</small></li>`).join("");
+  AL.hidden = false; A.setAttribute("aria-expanded", "true");
+}
+async function alookup(q){
+  const my = ++aseq; let found = [];
+  if (GOOGLE_KEY) try { found = (await google(q)).filter(o => o.address); } catch(e){}
+  if (!found.length) try {
+    const j = await (await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en&lat=33.749&lon=-84.388`)).json();
+    found = j.features.map(f => f.properties).filter(p => p.street).map(p => ({ address:[p.housenumber, p.street].filter(Boolean).join(" "), city:p.city || p.town || p.village || "", state: p.countrycode === "US" ? (US[p.state] || p.state || "") : (p.state || ""), zip:p.postcode || "" }));
+  } catch(e){}
+  if (my !== aseq) return;
+  aopts = found.slice(0, 6); ashow();
+}
+A.addEventListener("input", () => { clearTimeout(atimer); const q = A.value.trim(); if (q.length < 4){ AL.hidden = true; return; } atimer = setTimeout(() => alookup(q), 450); });
+AL.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (!li) return; e.preventDefault(); const o = aopts[+li.dataset.i];
+  A.value = o.address; [["city", o.city], ["state", o.state], ["zip", o.zip]].forEach(([id, v]) => { if (v) $("#" + id).value = v; }); AL.hidden = true; });
+A.addEventListener("blur", () => setTimeout(() => { AL.hidden = true; }, 150));
+
+// Gameday: search ESPN for the team, list its upcoming games, and fill the matchup, date, time and venue from the one you pick.
+const ESPN = "https://site.api.espn.com/apis/site/v2/sports/";
+let gtimer = 0, gseq = 0, GAMES = [];
+function showGameFind(){ $("#gameFind").hidden = F.elements.type.value !== "game"; }
+F.addEventListener("change", e => { if (e.target.name === "type") showGameFind(); });
+async function findGames(q){
+  const my = ++gseq, out = $("#gameRes"); out.textContent = "Searching ESPN…";
+  try {
+    const d = await (await fetch(`https://site.web.api.espn.com/apis/common/v3/search?query=${encodeURIComponent(q)}&limit=5&type=team`)).json();
+    const teams = (d.items || []).filter(t => t.sport && t.league && t.id).slice(0, 3);
+    const lists = await Promise.all(teams.map(t => fetch(`${ESPN}${t.sport}/${t.league}/teams/${t.id}/schedule`).then(r => r.json()).catch(() => ({}))));
+    if (my !== gseq) return;
+    const now = Date.now() - 6 * 3600e3, seen = new Set();
+    GAMES = lists.flatMap(x => x.events || []).filter(e => Date.parse(e.date) >= now && !seen.has(e.id) && seen.add(e.id)).sort((a, b) => Date.parse(a.date) - Date.parse(b.date)).slice(0, 12);
+    if (!GAMES.length){ out.textContent = "No upcoming games found on ESPN. Type the matchup below instead."; return; }
+    out.innerHTML = GAMES.map((e, i) => { const c = e.competitions[0], h = c.competitors.find(x => x.homeAway === "home"), a = c.competitors.find(x => x.homeAway === "away");
+      return `<button type="button" class="pick" data-g="${i}" style="display:block;width:100%;text-align:left;margin:4px 0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:inherit;cursor:pointer">
+        <b>${esc(a?.team?.displayName)} at ${esc(h?.team?.displayName)}</b><br><small>${new Date(e.date).toLocaleString([], { weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" })} · ${esc(c.venue?.fullName || "")}</small></button>`; }).join("");
+  } catch(err){ out.textContent = "Couldn't reach ESPN. Type the matchup below instead."; }
+}
+$("#gameQ").addEventListener("input", () => { clearTimeout(gtimer); const q = $("#gameQ").value.trim(); if (q.length < 3) return; gtimer = setTimeout(() => findGames(q), 400); });
+$("#gameRes").addEventListener("click", e => {
+  const b = e.target.closest("[data-g]"); if (!b) return; const ev = GAMES[+b.dataset.g], c = ev.competitions[0], d = new Date(ev.date);
+  const h = c.competitors.find(x => x.homeAway === "home"), a = c.competitors.find(x => x.homeAway === "away"), pad = n => String(n).padStart(2, "0");
+  $("#eventName").value = `${a.team.displayName} vs ${h.team.displayName}`;
+  F.elements.date.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  F.elements.start.value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (c.venue?.fullName){ V.value = c.venue.fullName; const ad = c.venue.address || {}; $("#city").value = ad.city || ""; $("#state").value = US[ad.state] || ad.state || ""; lookup(c.venue.fullName); }
+  $("#gameRes").innerHTML = `<span class="auto">Filled in: ${esc($("#eventName").value)}, ${esc(d.toLocaleDateString())}. Pick the venue from the list to add its street address.</span>`;
+});
+showGameFind();
+
 // The name field's label follows the shoot type
 const LABELS = { game:["Matchup","e.g. 49ers vs Falcons"], event:["Event name","e.g. Spring Alumni Dinner"], portrait:["Session name","e.g. 2026 Media Day"], commercial:["Project / campaign","e.g. Spring Kit Launch"], practice:["Practice name","e.g. Training camp, open practice"] };
 F.elements.date.addEventListener("change", () => { delete F.dataset.pastOk; $("#send").textContent = "Send request"; $("#status").textContent = ""; });
@@ -272,7 +333,9 @@ F.addEventListener("submit", async e => {
   $("#send").disabled = true; $("#send").textContent = "Send request"; $("#status").textContent = "Sending…";
   let sent = false;
   if (!DEMO) try {
-    const r = await fetch("/", { method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body:new URLSearchParams(new FormData(F)).toString() });
+    const fd = new FormData(F), file = fd.get("team_pdf"), hasFile = file && file.size;
+    if (!hasFile) fd.delete("team_pdf");
+    const r = hasFile ? await fetch("/", { method:"POST", body:fd }) : await fetch("/", { method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body:new URLSearchParams(fd).toString() });
     sent = r.ok;
   } catch(err){}
   const local = DEMO || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.protocol === "file:";

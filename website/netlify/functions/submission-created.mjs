@@ -5,6 +5,6 @@ import { getStore } from "@netlify/blobs";
 export default async (req) => {
   const { payload } = await req.json();
   if (payload?.form_name !== "booking") return new Response("ok");
-  await getStore("board").setJSON("inbox/" + payload.id, { sub: payload.id, created: payload.created_at, ...payload.data });
+  await getStore({ name: "board", consistency: "strong" }).setJSON("inbox/" + payload.id, { sub: payload.id, created: payload.created_at, ...payload.data });
   return new Response("ok");
 };

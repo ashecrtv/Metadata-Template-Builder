@@ -44,7 +44,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .spacer{flex:1}
 .pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .st-Requested{color:var(--s-req);background:var(--s-req-bg)}.st-Confirmed{color:var(--s-con);background:var(--s-con-bg)}
-.st-Shot{color:var(--s-shot);background:var(--s-shot-bg)}.st-Delivered{color:var(--s-del);background:var(--s-del-bg)}
+.st-Shot,.st-Inprogress{color:var(--s-shot);background:var(--s-shot-bg)}.st-Delivered{color:var(--s-del);background:var(--s-del-bg)}
 .tablebox{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:980px}
 th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -56,6 +56,7 @@ td small{display:block;color:var(--muted)}
 .col{background:var(--soft);border-radius:12px;padding:10px;min-height:200px}
 .col h3{margin:2px 4px 10px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between}
 .col.over{outline:2px dashed var(--accent)}
+.archgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:8px;cursor:grab}
 .card b{display:block;margin-bottom:2px}.card .m{color:var(--muted);font-size:12px}
 .card .icons{display:flex;gap:6px;margin-top:6px;font-size:11px}
@@ -119,7 +120,7 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
 </div>
 
 <dialog id="dlg"><form method="dialog" class="dlg" id="jobForm" novalidate>
-  <h2 id="dlgTitle">Job</h2>
+  <div style="display:flex;align-items:center;gap:8px"><h2 id="dlgTitle" style="flex:1">Job</h2><button type="button" class="ghost" id="closeTop" aria-label="Close" style="font-size:20px;line-height:1;padding:6px 12px">×</button></div>
   <div class="fg">
     <label>Status<select name="status"></select></label>
     <label>Shoot type<select name="type"><option value="game">Gameday</option><option value="portrait">Portrait</option><option value="commercial">Commercial</option><option value="event">Event</option><option value="practice">Practice</option></select></label>
@@ -147,32 +148,32 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
     <label>Selects / coverage<input name="coverage"></label>
     <label>Deadline<input name="deadline"></label>
     <label>Usage<input name="usage"></label>
-    <label>Key subjects<input name="subjects"></label>
+    <label>Key Subjects and/or Keywords<input name="subjects"></label>
     <label class="full">Extra keywords<input name="keywords"></label>
-    <label class="full">Shot list / must-gets<textarea name="shotlist" rows="2"></textarea></label>
-    <label class="full">Notes<textarea name="notes" rows="2"></textarea></label>
+    <label class="full">Shot List and Key Moments<textarea name="shotlist" rows="2"></textarea></label>
+    <label class="full">Additional Comments<textarea name="notes" rows="2"></textarea></label>
     <div class="sec">Delivery</div>
     <label class="full">Gallery link<input name="gallery" type="url" placeholder="https://…"></label>
-    <div class="full" id="crewFiles" hidden></div>
+    <div class="sec full">Templates</div>
     <div class="xmpbox" id="xmpBox">
-      <div style="flex:1;min-width:200px"><b>Metadata template</b><div class="note" id="xmpName">Drop the .XMP here, or choose it.</div></div>
+      <div style="flex:1;min-width:200px"><b id="mainWho">Main photographer</b>
+        <input name="filename" id="fileName" spellcheck="false" aria-label="Ingest file name" title="Ingest file name: paste into Photo Mechanic → Ingest → Rename" style="display:block;width:100%;margin:4px 0 2px;font-family:ui-monospace,Menlo,monospace;font-size:13px">
+        <div class="note" id="xmpName">Drop the .XMP here, or choose it.</div></div>
+      <button type="button" class="ghost" id="xmpGet" hidden>Download .XMP</button>
+      <button type="button" class="ghost" id="fnCopy">Copy file name</button>
       <button type="button" class="ghost" id="xmpPick">Choose .XMP</button>
-      <button type="button" class="ghost" id="xmpGet" hidden>Download</button>
       <button type="button" class="ghost" id="xmpDel" hidden>Remove</button>
+      <button type="button" class="ghost" id="fnMake" title="Rebuild the file name from the date, client, event and photographer" style="font-size:12px">Rebuild name</button>
       <input type="file" id="xmpFile" accept=".xmp,.XMP" hidden>
     </div>
-    <div class="xmpbox">
-      <label style="flex:1;min-width:220px;font-size:12px;font-weight:600">Ingest file name <span class="note" style="font-weight:400">(paste into Photo Mechanic → Ingest → Rename)</span><input name="filename" id="fileName" spellcheck="false" style="font-family:ui-monospace,Menlo,monospace;font-size:13px"></label>
-      <button type="button" class="ghost" id="fnCopy">Copy</button>
-      <button type="button" class="ghost" id="fnMake" title="Rebuild from the date, client, event and photographer">Rebuild</button>
-    </div>
+    <div class="full" id="crewFiles" hidden></div>
   </div>
   <div class="foot">
     <button value="save" id="saveBtn">Save</button>
     <button type="button" class="ghost" id="toBuilder">Open in builder →</button>
     <a class="note" id="galLink" target="_blank" rel="noopener" hidden>Open gallery ↗</a>
     <span class="spacer"></span>
-    <button type="button" class="danger" id="delBtn">Delete job</button>
+    <button type="button" class="ghost" id="archBtn">Archive</button><button type="button" class="danger" id="delBtn">Delete job</button>
     <button type="button" class="ghost" id="cancelBtn">Cancel</button>
   </div>
 </form></dialog>
@@ -188,7 +189,8 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
 <datalist id="photList"></datalist>
 
 <script>
-const STATUSES = ["Requested", "Confirmed", "Shot", "Delivered"];
+const STATUSES = ["Requested", "Confirmed", "In progress", "Delivered"];
+const stc = s => "st-" + String(s || "").replace(/\s+/g, "");   // "In progress" -> st-Inprogress
 const TYPES = { game:"Gameday", portrait:"Portrait", commercial:"Commercial", event:"Event", practice:"Practice" };
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]);
@@ -201,7 +203,7 @@ const save = () => {
   if (CLOUD){ clearTimeout(pushT); pushT = setTimeout(() => fetch("/api/jobs", { method:"PUT", headers:{ "Content-Type":"application/json", "x-board-key":BKEY() }, body:JSON.stringify({ jobs:JOBS, seen:SEEN }) })
     .catch(() => alertNote("Couldn't reach the server. Changes are kept in this browser for now.")), 400); }
 };
-let JOBS = load(), VIEW = "table", SORT = { k:"date", dir:1 }, CAL = new Date(), EDIT = null;
+let JOBS = load().map(j => j.status === "Shot" ? { ...j, status:"In progress" } : j), VIEW = "table", SORT = { k:"date", dir:1 }, CAL = new Date(), EDIT = null;
 try { VIEW = localStorage.getItem("ashe.boardView") || "table"; } catch(e){}
 const alertNote = t => { $("#summary").textContent = t; };
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -237,7 +239,7 @@ function renderTable(list){
   if (!list.length) return `<div class="tablebox"><div class="empty">No jobs yet. Add one from a booking link, or start a new job.</div></div>`;
   return `<div class="tablebox"><table><thead><tr>${COLS.map(([k, l]) => `<th data-sort="${k}">${l}${SORT.k === k ? (SORT.dir > 0 ? " ↑" : " ↓") : ""}</th>`).join("")}</tr></thead><tbody>${list.map(j => `
     <tr data-id="${j.id}">
-      <td><span class="pill st-${j.status}">${j.status}</span></td>
+      <td><span class="pill ${stc(j.status)}">${j.status}</span></td>
       <td>${esc(fmtDate(j.date))}<small>${esc(when(j))}</small></td>
       <td><b>${esc(title(j))}</b><small>${esc(TYPES[j.type] || "")}</small></td>
       <td>${esc(j.org)}<small>${esc([j.department, j.contact].filter(Boolean).join(" · "))}</small></td>
@@ -252,7 +254,7 @@ function renderTable(list){
 /* ---------- Status board ---------- */
 function renderBoard(list){
   return `<div class="cols">${STATUSES.map(s => { const js = list.filter(j => j.status === s).sort((a, b) => (a.date || "~").localeCompare(b.date || "~")); return `
-    <div class="col" data-col="${s}"><h3><span class="pill st-${s}">${s}</span><span>${js.length}</span></h3>
+    <div class="col" data-col="${s}"><h3><span class="pill ${stc(s)}">${s}</span><span>${js.length}</span></h3>
       ${js.map(j => `<div class="card" draggable="true" data-id="${j.id}"><b>${esc(title(j))}</b>
         <div class="m">${esc(j.org)}</div><div class="m">${esc(fmtDate(j.date))}${j.start ? " · " + esc(fmtTime(j.start)) : ""}</div><div class="m">${esc([j.venue, j.city].filter(Boolean).join(", "))}</div>
         <div class="icons">${j.photographer ? `<span class="pill" style="background:var(--soft)">${esc(j.photographer)}</span>` : ""}${j.xmp ? (j.draft ? '<span class="miss">Draft, check</span>' : '<span class="ok">✓ XMP</span>') : ""}${j.gallery ? '<span class="ok">✓ Gallery</span>' : ""}</div></div>`).join("") || '<div class="note" style="padding:6px">Drop jobs here</div>'}
@@ -270,14 +272,18 @@ function renderCal(list){
     <div class="grid7">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="dow">${d}</div>`).join("")}
     ${days.map(d => { const k = iso(d), js = list.filter(j => j.date === k).sort((a, b) => (a.start || "").localeCompare(b.start || "")); return `
       <div class="day${d.getMonth() !== m ? " out" : ""}${k === today ? " today" : ""}"><div class="n">${d.getDate()}</div>
-        ${js.map(j => `<span class="ev st-${j.status}" data-id="${j.id}" title="${esc(title(j) + " · " + (j.org || ""))}">${j.start ? esc(fmtTime(j.start)) + " " : ""}${esc(title(j))}</span>`).join("")}</div>`; }).join("")}</div></div>`;
+        ${js.map(j => `<span class="ev ${stc(j.status)}" data-id="${j.id}" title="${esc(title(j) + " · " + (j.org || ""))}">${j.start ? esc(fmtTime(j.start)) + " " : ""}${esc(title(j))}</span>`).join("")}</div>`; }).join("")}</div></div>`;
 }
 
 function render(){
   summary();
   $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === VIEW));
-  const list = filtered();
-  $("#view").innerHTML = VIEW === "board" ? renderBoard(list) : VIEW === "cal" ? renderCal(list) : renderTable(list);
+  const all = filtered(), list = all.filter(j => !j.archived), arch = all.filter(j => j.archived).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  $("#view").innerHTML = `<h2 style="margin:0 0 10px;font-size:16px">Current projects</h2>` + (VIEW === "board" ? renderBoard(list) : VIEW === "cal" ? renderCal(list) : renderTable(list)) +
+    `<div class="col" data-col="archive" style="margin-top:22px;min-height:90px"><h3><span>Archived projects</span><span>${arch.length}</span></h3>
+      <p class="note" style="margin:0 0 8px">Drag a finished project here, or open it and tap Archive. Drag it back to a status column to bring it back.</p>
+      <div class="archgrid">${arch.map(j => `<div class="card" draggable="true" data-id="${j.id}"><b>${esc(title(j))}</b><div class="m">${esc(j.org)} · ${esc(fmtDate(j.date))}</div>
+        <button type="button" class="ghost" data-stop data-unarch="${j.id}" style="margin-top:6px;font-size:12px;padding:4px 8px">Back to current</button></div>`).join("") || '<p class="note">Nothing archived yet.</p>'}</div></div>`;
 }
 
 /* ---------- Edit dialog ---------- */
@@ -295,7 +301,8 @@ function openJob(j){
   XMP = EDIT.xmp || null; showXmp();
   const cf = EDIT.crewFiles || [];   // made by the builder's Save to job board, one per crew member
   $("#crewFiles").hidden = !cf.length;
-  $("#crewFiles").innerHTML = cf.length ? `<div class="sec" style="margin-top:0">Crew templates</div>` + cf.map((c, i) => `<div class="xmpbox" style="margin:6px 0"><div style="flex:1;min-width:200px"><b>${esc(c.name)}</b><div class="note" style="font-family:ui-monospace,Menlo,monospace">${esc(c.filename)}</div></div><button type="button" class="ghost" data-crewdl="${i}">Download .XMP</button><button type="button" class="ghost" data-crewcopy="${i}">Copy file name</button></div>`).join("") : "";
+  $("#crewFiles").innerHTML = cf.length ? cf.map((c, i) => `<div class="xmpbox" style="margin:6px 0"><div style="flex:1;min-width:200px"><b>${esc(c.name)}</b><div class="note" style="font-family:ui-monospace,Menlo,monospace">${esc(c.filename)}</div></div><button type="button" class="ghost" data-crewdl="${i}">Download .XMP</button><button type="button" class="ghost" data-crewcopy="${i}">Copy file name</button></div>`).join("") : "";
+  $("#mainWho").textContent = EDIT.photographer || "Main photographer";
   $("#fileName").dataset.auto = EDIT.filename ? "" : "1";
   if (!EDIT.filename) $("#fileName").value = fileNameFor(EDIT);
   $("#delBtn").hidden = !j;
@@ -347,7 +354,7 @@ $("#fnMake").onclick = () => { $("#fileName").value = fileNameFor(formJob()); };
 $("#fnCopy").onclick = async () => {
   const v = $("#fileName").value || fileNameFor(formJob()); $("#fileName").value = v;
   try { await navigator.clipboard.writeText(v); } catch(e){ $("#fileName").select(); document.execCommand("copy"); }
-  $("#fnCopy").textContent = "Copied ✓"; setTimeout(() => $("#fnCopy").textContent = "Copy", 1500);
+  $("#fnCopy").textContent = "Copied ✓"; setTimeout(() => $("#fnCopy").textContent = "Copy file name", 1500);
 };
 // Fill it in while the name is still the automatic one
 ["date","org","name","photographer"].forEach(n => F.elements[n].addEventListener("input", () => { if ($("#fileName").dataset.auto === "1") $("#fileName").value = fileNameFor(formJob()); }));
@@ -415,6 +422,9 @@ document.addEventListener("click", e => {
   if (e.target.closest("[data-stop]")) return;
   const row = e.target.closest("#view [data-id]"); if (row) openJob(JOBS.find(j => j.id === row.dataset.id));
 });
+document.addEventListener("click", e => { const b = e.target.closest("[data-unarch]"); if (!b) return; const j = JOBS.find(x => x.id === b.dataset.unarch); if (j){ j.archived = false; save(); render(); } });
+$("#archBtn").addEventListener("click", () => { if (!EDIT) return; const j = JOBS.find(x => x.id === EDIT.id); if (j){ j.archived = !j.archived; save(); } $("#dlg").close(); render(); });
+$("#closeTop").addEventListener("click", () => $("#cancelBtn").click());
 $("#q").addEventListener("input", render); $("#fPhot").addEventListener("change", render);
 
 // Drag cards between status columns
@@ -423,7 +433,7 @@ document.addEventListener("dragstart", e => { const c = e.target.closest(".card"
 document.addEventListener("dragover", e => { const col = e.target.closest(".col"); if (col && dragId){ e.preventDefault(); $$(".col").forEach(x => x.classList.toggle("over", x === col)); } });
 document.addEventListener("drop", e => {
   const col = e.target.closest(".col"); if (!col || !dragId) return; e.preventDefault();
-  const j = JOBS.find(x => x.id === dragId); if (j){ j.status = col.dataset.col; save(); } dragId = null; render();
+  const j = JOBS.find(x => x.id === dragId); if (j){ if (col.dataset.col === "archive") j.archived = true; else { j.archived = false; j.status = col.dataset.col; } save(); } dragId = null; render();
 });
 document.addEventListener("dragend", () => { dragId = null; $$(".col").forEach(x => x.classList.remove("over")); });
 
@@ -447,6 +457,8 @@ function jobFromBooking(b){
   ["ref","crew","type","name","theme","org","department","contact","email","phone","dayof","date","start","end","duration","venue","address","city","state","coverage","deadline","usage","subjects","keywords","shotlist","notes","photographer"].forEach(k => j[k] = "");
   Object.entries(b).forEach(([k, v]) => { const to = FROM_FORM[k] || k; if (to in j && to !== "id" && to !== "status" && v) j[to] = String(v).trim(); });
   j.dayof = [b.dayof_name, b.dayof_phone].filter(Boolean).join(" · ");
+  const pdf = b.team_pdf?.url || (typeof b.team_pdf === "string" && /^https?:/.test(b.team_pdf) ? b.team_pdf : "");   // schedule or roster attached on the booking form
+  if (pdf) j.notes = [j.notes, "Attached PDF: " + pdf].filter(Boolean).join("\n");
   if (!TYPES[j.type]) j.type = "event";
   return j;
 }
@@ -461,7 +473,7 @@ async function sync(){
     const r = await fetch("/api/jobs", { headers:{ "x-board-key":BKEY() } });
     if (r.status === 401){ $("#lockForm").hidden = false; $("#syncNote").textContent = "Locked. Enter your passcode to see your jobs."; return; }
     if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return;   // no server here (local copy): this browser only
-    const d = await r.json(); $("#lockForm").hidden = true; CLOUD = true; SEEN = d.seen || [];
+    const d = await r.json(); $("#lockForm").hidden = true; CLOUD = true; SEEN = d.seen || []; (d.jobs || []).forEach(j => { if (j.status === "Shot") j.status = "In progress"; });
     const have = new Set(d.jobs.map(j => j.id));
     JOBS = d.jobs.concat(JOBS.filter(j => !have.has(j.id)));   // anything only in this browser moves up to the server
     let added = 0;

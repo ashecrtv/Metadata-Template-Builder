@@ -358,6 +358,7 @@ body.noscroll{overflow:hidden}
       <div class="panel" id="gamePanel">
         <h2 id="gameH2">Game</h2>
         <div id="gameList" style="margin-bottom:14px"></div>
+        <div class="row small" id="schedRow" style="gap:8px;margin:-6px 0 14px;flex-wrap:wrap"><button class="small" type="button" id="schedLoad">Upload team schedule (PDF)</button><span class="muted">For schools ESPN doesn't list: a printable schedule page becomes the game list. The first team's games are read.</span></div>
         <div class="group-h">Where &amp; when</div>
         <div class="fields" style="grid-template-columns:repeat(6,minmax(0,1fr))">
           <label>Date<input type="date" id="gDate"></label>
@@ -385,7 +386,8 @@ body.noscroll{overflow:hidden}
           <label style="grid-column:span 2">Description writer(s), full names<input type="text" id="gWriters" placeholder="Defaults to the photographer"></label>
           <label>Copyright owner<select id="gCopy"><option value="client">Client (© year + client)</option><option value="photographer">Photographer (© year + photographer)</option><option value="none">Leave blank</option></select></label>
           <label>Delimiter<input type="text" id="delim" maxlength="2"></label>
-          <label style="grid-column:span 6">Other photographers on this shoot <span class="muted">(one per line: Name, Title. Each gets their own template and file name in Step 4)</span><textarea id="gCrew" rows="2" placeholder="Madison Morris, Team Photographer"></textarea></label>
+          <div style="grid-column:span 6" id="crewToggleRow"><button class="small" type="button" id="crewToggle">+ Add other photographers</button></div>
+          <label style="grid-column:span 6" id="crewRow" hidden>Other photographers on this shoot <span class="muted">(one per line: Name, Title. Each gets their own template and file name in Step 4)</span><textarea id="gCrew" rows="2" placeholder="Madison Morris, Team Photographer"></textarea></label>
         </div>
         <div id="gameStatus" class="small muted"></div>
       </div>
@@ -872,6 +874,7 @@ async function setSide(i, t, L){
   const mine = (CFG.myCodes || {})[`${L.k}:${t.id}`];
   if (mine){ if (mine.abbr) side.team = { ...t, abbr: mine.abbr }; if (mine.code) side.code = mine.code; if (mine.prefix) side.myPrefix = mine.prefix; if (mine.name){ side.teamName = mine.name; side.myName = mine.name; } if (mine.article !== null && mine.article !== undefined){ side.article = mine.article; side.myArticle = mine.article; } side.mine = true; }
   S.sides[i] = side;
+  if (String(t.id).startsWith("c-")){ side.source = "pr"; side.espn = {players:[], coach:"", season:"", fetched:null}; side.err = "Load this team's roster from a PR file, CSV, old code file, or pasted text."; return; }
   try {
     const r = await fetchRoster(t);
     side.espn = r; side.coach = r.coach; if (!mine?.code) side.code = (side.team.abbr||side.code).toLowerCase();
@@ -1019,7 +1022,7 @@ document.addEventListener("click", async e => {
     if (S.multi && !S.batch.has(S.gameIdx)){ S.gameConfirmed = false; await pickGame(Math.min(...S.batch)); }
     S.gameConfirmed = true; recentTeams.add(S.sides); venueMemory.put(S.game.venue, S.game.city, S.game.state); renderGames(); return; }
   if (t.id === "gameChange"){ S.gameConfirmed = false; S.multi = false; renderGames(); return; }
-  if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => i < S.upCount).filter(i => t.dataset.bsel === "all" || (compId(evInfo(S.games[i]).home) === String(a.team.id)) === (t.dataset.bsel === "home"))); renderGames(); return; }
+  if (t.dataset?.bsel){ const a = S.sides[0]; S.batch = new Set(t.dataset.bsel === "none" ? [] : S.games.map((g, i) => i).filter(i => i < S.upCount).filter(i => t.dataset.bsel === "all" || (!S.games[i].competitions[0].neutralSite && (compId(evInfo(S.games[i]).home) === String(a.team.id)) === (t.dataset.bsel === "home")))); renderGames(); return; }
   if (t.id === "batchGo") exportBatch();
 });
 // Batch: make the template, ingest name and code file for every ticked game, then hand back one .zip.
@@ -1071,7 +1074,7 @@ async function pickGame(i){
     $("#gameStatus").textContent = "Loading opponent roster…";
     const t = opp.team || {};
     await setSide(1, { id:compId(opp), abbr:t.abbreviation||"", name:t.displayName||"", short:t.shortDisplayName||"", loc:t.location||"", nick:t.name||"", logo:t.logos?.[0]?.href||t.logo||"", league:a.L }, a.L);
-    S.sides[1].fromGame = true;
+    S.sides[1].fromGame = true; if (e.fromSchedule) S.sides[1].article = "";   // school names from a schedule: "against Albany State", not "the Albany State"
     assignPrefixes(); renderTeams();
   }
   g.date = x.ymd;                                              // the date where the game is played
@@ -1098,7 +1101,7 @@ async function pickGame(i){
 async function loadGameRoster(e, x){
   const sides = S.sides.filter(Boolean);
   for (const s of sides){ s.game = null; if (s.source === "game") s.source = "espn"; }
-  if (!x.c.status?.type?.completed) { renderTeams(); renderAll(); return; }
+  if (!x.c.status?.type?.completed || e.fromSchedule) { renderTeams(); renderAll(); return; }
   try {
     const d = await getJSON(`${ESPN}${sides[0].L.k}/summary?event=${e.id}`);
     const lists = {};
@@ -1228,7 +1231,7 @@ async function pdfText(buf){
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   }
   const doc = await pdfjsLib.getDocument({data:buf}).promise;
-  const out = [];
+  const out = []; S.pdfRows = [];
   for (let p=1; p<=doc.numPages; p++){
     const tc = await (await doc.getPage(p)).getTextContent();
     const rows = [];
@@ -1241,7 +1244,7 @@ async function pdfText(buf){
     }
     rows.sort((a,b)=>b.y-a.y);
     for (const r of rows){
-      r.items.sort((a,b)=>a.x-b.x);
+      r.items.sort((a,b)=>a.x-b.x); S.pdfRows.push(r.items);
       let line = "", end = null;
       for (const it of r.items){ if (end!==null) line += (it.x - end > 1.5 ? "  " : ""); line += it.s; end = it.x + it.w; }
       out.push(line);
@@ -1362,6 +1365,7 @@ async function handleFile(i, file){
     else if (/\.docx$/i.test(file.name)) text = await docxText(buf);
     else if (/\.doc$/i.test(file.name)) throw new Error("Old .doc files can't be read. Save it as .docx or PDF first.");
     else text = new TextDecoder().decode(buf);
+    if (/\.pdf$/i.test(file.name) && loadScheduleRows(i, file.name)) return;   // a schedule, not a roster
     side.prText = text; side.prFile = file.name;
     applyPR(i);
   } catch(e){ st.textContent = e.message; }
@@ -1634,6 +1638,74 @@ function renderOverviewCaption(){
   $("#capPersons").innerHTML = `<span class="muted">No people codes for ${esc(o.kind.toLowerCase())}s. Type names into Persons Shown if needed.</span>`;
   renderKeywords();
 }
+/* ---------- Team schedule from a PDF (school athletics "print" pages, media guides) ----------
+   Reads the table by column: Date, Time, At, Opponent, Location, Tournament, Result. Each game can wrap onto 2-3 lines.
+   Every row becomes a game in Step 2, so select-several, season templates and code files all work as with ESPN games. */
+function parseScheduleRows(rows){
+  const isHead = r => { const t = r.map(x => x.s.trim().toLowerCase()); return t.includes("date") && t.includes("opponent"); };
+  const games = []; let cols = null, g = null;
+  const colOf = x => { let k = null; for (const c of cols) if (x >= c.x - 4) k = c.k; return k; };
+  for (const r of rows){
+    if (isHead(r)){ cols = r.map(x => ({ k:x.s.trim().toLowerCase(), x:x.x })); continue; }
+    if (!cols) continue;
+    const line = r.map(x => x.s).join(" ");
+    if (/https?:\/\/|copyright|^\d{1,2}\/\d{1,2}\/\d{2}/i.test(line)) continue;   // print headers and footers
+    const cells = {}; r.forEach(x => { const k = colOf(x.x); if (k) cells[k] = ((cells[k] || "") + " " + x.s).trim(); });
+    if (/^[A-Z][a-z]{2,8}\.? \d{1,2}\b/.test(cells.date || "")){ g = {}; games.push(g); }
+    if (!g) continue;
+    for (const [k, v] of Object.entries(cells)) g[k] = ((g[k] || "") + " " + v).replace(/\s+/g, " ").replace(/([A-Za-z])- ([A-Z])/g, "$1-$2").trim();   // "Knox- Windham" wrapped onto two lines
+  }
+  return games.length >= 3 ? games : null;
+}
+function apState(t){
+  const s = String(t || "").replace(/\./g, "").trim().toUpperCase();
+  if (/^(DC|WASHINGTON DC)$/.test(s)) return "DC";
+  if (STATES[s]) return s;
+  const ap = Object.entries(AP_STATES).find(([k, v]) => v.replace(/\./g, "").toUpperCase() === s || v.replace(/\./g, "").toUpperCase().slice(0, 3) === s.slice(0, 3) && s.length <= 5);
+  return ap ? ap[0] : stateAbbr(t) || t;
+}
+// One row of the table -> the same shape as an ESPN game, so the rest of the builder treats it like one.
+function scheduleEvent(row, a, i){
+  const M = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  const md = row.date.match(/^([A-Z][a-z]{2,8})\.? (\d{1,2}),?\s*(\d{4})?/), mi = M.indexOf(md[1].slice(0, 3).toLowerCase());
+  let y = +md[3] || new Date().getFullYear(); if (!md[3] && new Date(y, mi, +md[2]) < new Date(Date.now() - 180 * 864e5)) y++;
+  const tm = String(row.time || "").match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  const h = tm ? (+tm[1] % 12) + (/pm/i.test(tm[3]) ? 12 : 0) : 12, d = new Date(y, mi, +md[2], h, tm ? +(tm[2] || 0) : 0);
+  const at = String(row.at || "").toLowerCase(), opp0 = String(row.opponent || "").replace(/^(vs\.?|at)\s+/i, "").replace(/\s*\([^)]*\)\s*$/, "").trim();   // "Anderson University (SC)" -> "Anderson University"
+  const opp = /conference|^tb[ad]$/i.test(opp0) || !opp0 ? "TBD" : opp0;   // tournament games before the bracket is set
+  const [cs, vn] = String(row.location || "").split(/\s+\/\s*/);
+  const cm = String(cs || "").match(/^([^,]+),\s*(.+)$/);
+  const venue = String(vn || "").replace(/\s+-\s+.*$/, "").replace(/[“”]/g, '"').trim();
+  const res = String(row.result || "").match(/^([WLT]),?\s*(\d+)\s*-\s*(\d+)/);
+  const tour = String(row.tournament || "").trim(), name = tour.split(" ").map((w, k) => /^[A-Z]{2,4}$/.test(w) ? w : k && /^(of|the|and|at|in|for)$/i.test(w) ? w.toLowerCase() : w.charAt(0) + w.slice(1).toLowerCase()).join(" ");   // SIAC stays, "Den of Honor"
+  const oppTeam = { id:"c-" + opp.toLowerCase().replace(/[^a-z0-9]+/g, ""), abbreviation:opp.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase(), displayName:opp, shortDisplayName:opp, location:opp, name:"" };
+  const me = { id:a.team.id, homeAway: at === "away" ? "away" : "home", team:{ id:a.team.id, abbreviation:a.team.abbr, displayName:a.teamName || a.team.name }, score: res ? { displayValue: res[2] } : undefined };
+  const them = { id:oppTeam.id, homeAway: at === "away" ? "home" : "away", team:oppTeam, score: res ? { displayValue: res[3] } : undefined };
+  return { id:"sched-" + i, date:d.toISOString(), name:`${(at === "away" ? me : them).team.displayName} at ${(at === "away" ? them : me).team.displayName}`, fromSchedule:true,
+    seasonType: /tournament|championship|playoff/i.test(tour) ? { name:"Postseason", type:3 } : { name:"Regular Season", type:2 },
+    competitions:[{ competitors:[me, them], neutralSite: at === "neutral", notes: name ? [{ headline:name }] : [],
+      venue: venue || cm ? { fullName:venue, address:{ city: cm ? cm[1].trim() : "", state: cm ? apState(cm[2]) : "" } } : undefined,
+      status:{ type:{ completed: !!res, shortDetail: tm ? "" : "TBD" } } }] };
+}
+function loadScheduleRows(i, fileName, fromBtn){
+  const rows = parseScheduleRows(S.pdfRows || []);
+  if (!rows){ if (fromBtn) $("#gameStatus").textContent = `Couldn't find a schedule table (Date, Opponent columns) in ${fileName}.`; return false; }
+  const a = S.sides[0]; if (!a) return false;
+  const evs = rows.map((r, k) => { try { return scheduleEvent(r, a, k); } catch(e){ return null; } }).filter(Boolean);
+  const cut = Date.now() - 6 * 3600e3, up = evs.filter(e => Date.parse(e.date) >= cut), past = evs.filter(e => Date.parse(e.date) < cut).reverse();
+  S.games = [...up, ...past]; S.upCount = up.length; S.gameIdx = -1; S.batch = new Set(); S.gameConfirmed = false; S.multi = false;
+  if (S.sides[1] && String(S.sides[1].team.id).startsWith("c-") && !S.sides[1].pr) S.sides[1].fromGame = true;   // the placeholder opponent gets replaced per game
+  S.schedFile = fileName;
+  const st = document.querySelector(`#prStatus${i}`); if (st) st.textContent = `Read ${evs.length} games from ${fileName}. Pick them in Step 2.`;
+  renderGames(); $("#gamePanel").scrollIntoView({ behavior:"smooth" });
+  return true;
+}
+document.addEventListener("click", e => { if (e.target.id !== "schedLoad") return;
+  if (!S.sides[0]){ $("#gameStatus").textContent = "Pick or set up the team first (search it, or Custom ▸ Gameday)."; return; }
+  const inp = Object.assign(document.createElement("input"), { type:"file", accept:".pdf,application/pdf" });
+  inp.onchange = async () => { const f = inp.files[0]; if (!f) return; $("#gameStatus").textContent = `Reading ${f.name}…`;
+    try { await pdfText(await f.arrayBuffer()); if (loadScheduleRows(0, f.name, true)) $("#gameStatus").textContent = `Read ${S.games.length} games from ${f.name}.`; } catch(err){ $("#gameStatus").textContent = err.message; } };
+  inp.click(); });
 function setCustomUI(){
   const custom = !!S.custom, ov = isOverview();
   document.querySelectorAll(".codeOnly").forEach(el => el.classList.toggle("hidden", ov));
@@ -1642,8 +1714,8 @@ function setCustomUI(){
   $("#gArenaAbbr").closest("label").classList.toggle("hidden", ov);     // venue abbreviation is for games only
   $("#gSeasonType").closest("label").classList.toggle("hidden", ov);    // so is season type
   $("#gMySide").closest("label").classList.toggle("hidden", ov);        // home / away and "against" wording are game-day only
-  $("#wordingRow").classList.toggle("hidden", ov);
-  if (custom) $("#gameList").innerHTML = `<div class="small muted">Custom ${esc(ov ? overviewSubject().kind.toLowerCase() : "game")}: fill in the date, venue, city and state below.</div>`;
+  $("#wordingRow").classList.toggle("hidden", ov); $("#schedRow").classList.toggle("hidden", ov);
+  if (custom && !S.games.length) $("#gameList").innerHTML = `<div class="small muted">Custom ${esc(ov ? overviewSubject().kind.toLowerCase() : "game")}: fill in the date, venue, city and state below.</div>`;
 }
 function showCustomFields(){
   const t = $("#cType").value;
@@ -2730,12 +2802,12 @@ async function saveToBoard(opts = {}){
   if (DEMO){ out.innerHTML = "In the demo, this would attach the template and file name to the job on the owner's private board. <a href=\"board.html\">See the sample board →</a>"; return "demo"; }
   let key = ""; try { key = localStorage.getItem("ashe.boardKey") || ""; } catch(e){}
   if (keyIn.value.trim()){ key = keyIn.value.trim(); try { localStorage.setItem("ashe.boardKey", key); } catch(e){} keyIn.value = ""; }
-  if (!key){ keyIn.hidden = false; keyIn.focus(); out.textContent = "Enter your passcode once on this device."; return; }
+  if (!key) return saveToBoardOpen(opts);   // no passcode on this device: the add-only route (can't read the board)
   out.textContent = "Saving…";
   try {
     const H = { "x-board-key":key, "Content-Type":"application/json" };
     const r = await fetch("/api/jobs", { headers:H });
-    if (r.status === 401){ try { localStorage.removeItem("ashe.boardKey"); } catch(e){} keyIn.hidden = false; keyIn.focus(); out.textContent = "Wrong passcode. Try again."; return; }
+    if (r.status === 401){ try { localStorage.removeItem("ashe.boardKey"); } catch(e){} return saveToBoardOpen(opts); }
     if (!r.ok) throw new Error(r.status);
     const d = await r.json(), jobs = d.jobs || [], seen = d.seen || [], b = S.booking || {};
     const same = (x, y) => String(x || "").trim().toLowerCase() === String(y || "").trim().toLowerCase();
@@ -2744,7 +2816,7 @@ async function saveToBoard(opts = {}){
     if (opts.draft && j && j.xmp) return "kept";   // never overwrite a template that's already there
     if (!j){   // the board hasn't pulled this booking in yet: make the job now, from the booking request if it's waiting
       const bk = (d.bookings || []).find(x => same(x.date, want.date) && same(x.org, want.org) && (!want.name || same(x.event_name, want.name)));
-      j = { id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), status:"Requested", created:new Date().toISOString(), type:b.type || "event",
+      j = { id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), status:"Requested", created:new Date().toISOString(), type:b.type || "",
         name:want.name, org:want.org, date:want.date, venue:b.venue || "", address:b.address || "", city:b.city || "", state:b.state || "", subjects:b.subjects || "", keywords:b.keywords || "", photographer:b.photographer || "" };
       if (bk){ Object.assign(j, { sub:bk.sub, contact:bk.name || "", email:bk.email || "", phone:bk.phone || "", department:bk.department || "", start:bk.start || "", end:bk.end || "",
         duration:bk.duration || "", coverage:bk.coverage || "", deadline:bk.deadline || "", usage:bk.usage || "", shotlist:bk.shotlist || "", notes:bk.notes || "",
@@ -2752,6 +2824,12 @@ async function saveToBoard(opts = {}){
       jobs.push(j);
     }
     readGame(); venueMemory.put(S.game.venue, S.game.city, S.game.state);
+    const g = S.game, [sa, sb] = S.sides, homeS = sa && sb ? S.sides[g.home] : null, awayS = sa && sb ? S.sides[1 - g.home] : null;
+    const fromBuilder = { type: S.custom ? (S.custom.type === "game" ? "game" : ["portrait","commercial","event"].includes(S.custom.type) ? S.custom.type : "event") : "game",
+      name: homeS ? `${awayS.teamName} vs ${homeS.teamName}` : (S.custom?.name || S.custom?.subject || S.custom?.project || ""),
+      org: $("#gClient").value.trim(), date: g.date || "", venue: g.venue || "", city: g.city || "", state: g.state || "",
+      photographer: CFG.photographer || $("#gPhotog").value.trim(), crew: crewList().map(c => c.name).join(", ") };
+    for (const [k, v] of Object.entries(fromBuilder)) if (v && !String(j[k] || "").trim()) j[k] = v;   // never overwrites what the booking or you typed
     j.xmp = { name:xmpFileName(), text:xmpText() };
     j.draft = !!opts.draft;   // drafts are marked "Draft, check" until you save from the builder yourself
     j.filename = $("#ingestOut").value.trim() || ingestName();
@@ -2768,6 +2846,24 @@ async function saveToBoard(opts = {}){
     if (opts.draft) return "saved";
     keyIn.hidden = true;
     out.innerHTML = `Saved to <b>${esc(j.name || j.org)}</b>: ${esc(j.xmp.name)} and ${esc(j.filename)}${j.crewFiles?.length ? `, plus ${j.crewFiles.length} crew template${j.crewFiles.length === 1 ? "" : "s"} (${esc(j.crewFiles.map(c => c.name).join(", "))})` : ""}. <a href="board.html">Open the job board →</a>`;
+  } catch(e){ out.textContent = "Couldn't reach the job board (it only works on the live site). Download the template instead."; }
+}
+// Save without the passcode: sends this template to /api/jobs-add, which can only add a job or fill in a job's blanks.
+async function saveToBoardOpen(opts = {}){
+  const out = $("#toBoardOut"); out.textContent = "Saving…";
+  readGame(); venueMemory.put(S.game.venue, S.game.city, S.game.state);
+  const b = S.booking || {}, g = S.game, [sa, sb] = S.sides, homeS = sa && sb ? S.sides[g.home] : null, awayS = sa && sb ? S.sides[1 - g.home] : null;
+  const fill = { type: b.type || (S.custom ? (S.custom.type === "game" ? "game" : ["portrait","commercial","event"].includes(S.custom.type) ? S.custom.type : "event") : "game"),
+    name: b.name || (homeS ? `${awayS.teamName} vs ${homeS.teamName}` : (S.custom?.name || S.custom?.subject || S.custom?.project || "")),
+    org: b.org || $("#gClient").value.trim(), date: b.date || g.date || "", venue: b.venue || g.venue || "", address: b.address || "", city: b.city || g.city || "", state: b.state || g.state || "",
+    subjects: b.subjects || "", keywords: b.keywords || "", photographer: b.photographer || CFG.photographer || $("#gPhotog").value.trim(), crew: crewList().map(c => c.name).join(", ") };
+  try {
+    const r = await fetch("/api/jobs-add", { method:"POST", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ fill, draft: !!opts.draft, xmp:{ name:xmpFileName(), text:xmpText() }, filename: $("#ingestOut").value.trim() || ingestName(), crewFiles: crewTemplates() }) });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if (opts.draft) return d.kept ? "kept" : "saved";
+    out.innerHTML = `Saved to <b>${esc(d.name || fill.org)}</b>: ${esc(xmpFileName())}${d.crew?.length ? `, plus ${d.crew.length} crew template${d.crew.length === 1 ? "" : "s"} (${esc(d.crew.join(", "))})` : ""}. <a href="board.html">Open the job board →</a>`;
   } catch(e){ out.textContent = "Couldn't reach the job board (it only works on the live site). Download the template instead."; }
 }
 $("#boardForm").addEventListener("submit", e => { e.preventDefault(); saveToBoard(); });
@@ -2942,7 +3038,9 @@ document.addEventListener("submit", e => {
 listProfiles();
 
 /* ---------- Make more: another shoot, crew templates, season ---------- */
-const showCrewBtn = () => { $("#dlCrew").hidden = !crewList().length; };
+const showCrewBtn = () => { const n = crewList().length; $("#dlCrew").hidden = !n; const mc = $("#moreCrew"); if (mc) mc.hidden = !n;   // only with a crew list from Step 2
+  if (n){ $("#crewRow").hidden = false; $("#crewToggleRow").hidden = true; } };
+document.addEventListener("click", e => { if (e.target.id !== "crewToggle") return; $("#crewRow").hidden = false; $("#crewToggleRow").hidden = true; $("#gCrew").focus(); });
 document.addEventListener("input", e => { if (e.target.id === "gCrew") showCrewBtn(); });
 addEventListener("load", showCrewBtn);
 // One folder per photographer: their template, their ingest file name, and the code replacement file.

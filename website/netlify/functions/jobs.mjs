@@ -7,7 +7,7 @@ export default async (req) => {
   const key = process.env.BOARD_KEY;
   if (!key) return Response.json({ error: "setup" }, { status: 503 });
   if (req.headers.get("x-board-key") !== key) return Response.json({ error: "locked" }, { status: 401 });
-  const store = getStore("board");
+  const store = getStore({ name: "board", consistency: "strong" });
   if (req.method === "GET") {
     const data = (await store.get("data", { type: "json" })) || { jobs: [], seen: [] };
     const { blobs } = await store.list({ prefix: "inbox/" });
