@@ -112,6 +112,7 @@ dialog::backdrop{background:rgba(18,18,18,.45)}
     <input id="q" type="search" placeholder="Search client, event, venue…">
     <select id="fPhot" style="width:auto"><option value="">All photographers</option></select>
     <span class="spacer"></span>
+    <button class="ghost" id="clearTests">Clear test jobs</button>
     <button class="ghost" id="exportBtn">Back up</button>
     <button class="ghost" id="importBtn">Restore</button>
     <input type="file" id="importFile" accept=".json" hidden>
@@ -474,6 +475,13 @@ document.addEventListener("drop", e => {
 document.addEventListener("dragend", () => { dragId = null; $$(".col,.zone").forEach(x => x.classList.remove("over")); });
 
 /* ---------- Back up / restore ---------- */
+// Removes only jobs with "test" in the reference, name or client, after you confirm the list.
+$("#clearTests").onclick = () => {
+  const isTest = j => /\btest\b/i.test([j.ref, j.name, j.org].join(" ")), gone = JOBS.filter(isTest);
+  if (!gone.length) return alertNote("No test jobs on the board.");
+  if (!confirm(`Delete these ${gone.length} test job${gone.length === 1 ? "" : "s"}? This can't be undone.\n\n` + gone.map(j => `• ${[j.ref, title(j), j.org].filter(Boolean).join(" · ")}`).join("\n"))) return;
+  JOBS = JOBS.filter(j => !isTest(j)); save(); render(); alertNote(`Deleted ${gone.length} test job${gone.length === 1 ? "" : "s"}.`);
+};
 $("#exportBtn").onclick = () => saveFile(JSON.stringify(JOBS, null, 2), `Job board backup ${new Date().toISOString().slice(0, 10)}.json`, "application/json");
 $("#importBtn").onclick = () => $("#importFile").click();
 $("#importFile").onchange = e => {
