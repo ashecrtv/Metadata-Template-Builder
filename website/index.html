@@ -35,6 +35,10 @@ if (DEMO) addEventListener("DOMContentLoaded", () => document.body.insertAdjacen
   --mono:"SF Mono",ui-monospace,Menlo,monospace; --sans:"Inter Tight",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box}
+.rise{animation:rise 220ms cubic-bezier(.23,1,.32,1)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.rise,.done>*,dialog[open],dialog[open]::backdrop{animation-name:fade!important}}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
 a{color:var(--accent)}
 main{max-width:1180px;margin:0 auto;padding:8px 16px 40px}
@@ -2877,6 +2881,7 @@ document.addEventListener("click", async e => {
     await saveToBoard(); t.disabled = false;
     const s = S.sent, game = !S.custom && S.sides[1], name = $("#ingestOut").value.trim() || ingestName(), crew = s?.crew || [];
     S.sendFiles = crew;
+    card.classList.remove("rise"); void card.offsetWidth; card.classList.add("rise");   // replay the entrance on each send
     card.innerHTML = `<div class="small" style="margin-bottom:10px">${s ? `<b>Sent to the board.</b>${s.kept ? " This job already had a template, so the board kept that one." : ""}` : esc($("#toBoardOut").textContent)}</div>
       <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" data-send="xmp" type="button">Download template (.XMP)</button>${game ? `<button data-send="code" type="button">Download code replacement file</button>` : ""}</div>
       <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><span class="small muted">Ingest file name</span><code style="font-family:var(--mono);font-size:13px;word-break:break-all">${esc(name)}</code><button class="small" data-send="name" type="button">Copy</button></div>
