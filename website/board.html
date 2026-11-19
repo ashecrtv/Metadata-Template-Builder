@@ -237,7 +237,7 @@ const fmtDate = d => d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", {
 const fmtTime = t => { if (!t) return ""; const [h, m] = t.split(":").map(Number); return `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const when = j => [j.start && j.end ? `${fmtTime(j.start)}–${fmtTime(j.end)}` : fmtTime(j.start), j.duration].filter(Boolean).join(" · ");
 const where = j => [j.city, j.state].filter(Boolean).join(", ");
-const title = j => j.name || TYPES[j.type] || "Untitled job";
+const title = j => j.name || j.org || TYPES[j.type] || "Untitled job";
 
 function filtered(){
   const q = $("#q").value.trim().toLowerCase(), p = $("#fPhot").value;
@@ -255,7 +255,7 @@ function summary(){
 }
 
 /* ---------- Table ---------- */
-const COLS = [["status","Status"],["date","Date"],["name","Event / project"],["org","Client"],["venue","Location"],["photographer","Photographer"],["deadline","Deadline"],["xmp","Template"],["gallery","Gallery"]];
+const COLS = [["name","Event / project"],["status","Status"],["date","Date"],["org","Client"],["venue","Location"],["photographer","Photographer"],["deadline","Deadline"],["xmp","Template"],["gallery","Gallery"]];
 function renderTable(list){
   list = [...list].sort((a, b) => {
     const k = SORT.k, va = k === "status" ? STATUSES.indexOf(a.status) : k === "xmp" ? !!a.xmp : (a[k] || "~"), vb = k === "status" ? STATUSES.indexOf(b.status) : k === "xmp" ? !!b.xmp : (b[k] || "~");
@@ -264,9 +264,9 @@ function renderTable(list){
   if (!list.length) return `<div class="tablebox"><div class="empty">No jobs yet. Add one from a booking link, or start a new job.</div></div>`;
   return `<div class="tablebox"><table><thead><tr>${COLS.map(([k, l]) => `<th data-sort="${k}">${l}${SORT.k === k ? (SORT.dir > 0 ? " ↑" : " ↓") : ""}</th>`).join("")}</tr></thead><tbody>${list.map(j => `
     <tr data-id="${j.id}" draggable="true">
+      <td><b>${esc(title(j))}</b><small>${esc([j.ref, TYPES[j.type]].filter(Boolean).join(" · "))}</small></td>
       <td><span class="pill ${stc(j.status)}">${j.status}</span></td>
       <td>${esc(fmtDate(j.date))}<small>${esc(when(j))}</small></td>
-      <td><b>${esc(title(j))}</b><small>${esc([j.ref, TYPES[j.type]].filter(Boolean).join(" · "))}</small></td>
       <td>${esc(j.org)}<small>${esc([j.department, j.contact].filter(Boolean).join(" · "))}</small></td>
       <td>${esc(j.venue)}<small>${esc(where(j))}</small></td>
       <td>${esc(j.photographer) || '<span class="miss">—</span>'}</td>
