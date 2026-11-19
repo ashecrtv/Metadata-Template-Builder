@@ -523,7 +523,7 @@ function demoXmp(d){
 async function sync(){
   if (DEMO){ JOBS = DEMO_JOBS.map(([id, type, name, org, date, venue, city, state, cat, caption, kw, filename], i) => ({ id, status:"Delivered", type, name, org, date, venue, city, state,
     photographer:"Asher Greene", gallery:`index.html?gallery=${i + 1}`, filename, xmp:{ name:`${date ? date.replace(/-/g, "_") + " " : ""}${name}_Asher Greene.XMP`, text:demoXmp({ name, org, venue, city, state, cat, caption, kw, date }) } }));
-]; render(); $("#syncNote").textContent = "Demo board with sample jobs. Changes aren't saved."; return; }
+  render(); $("#syncNote").textContent = "Demo board with sample jobs. Changes aren't saved."; return; }
   try {
     const r = await fetch("/api/jobs", { headers:{ "x-board-key":BKEY() } });
     if (r.status === 401){ $("#lockForm").hidden = false; $("#syncNote").textContent = "Locked. Enter your passcode to see your jobs."; return; }
