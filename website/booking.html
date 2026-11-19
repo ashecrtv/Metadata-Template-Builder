@@ -7,8 +7,9 @@
 <script>
 // Demo copy (GitHub Pages, or any page opened with ?demo): real games and templates work; bookings and the job board use sample data.
 window.DEMO = /\.github\.io$/.test(location.hostname) || new URLSearchParams(location.search).has("demo");
+if (DEMO) try { Object.defineProperty(window, "localStorage", { value: sessionStorage }); } catch(e){}   // demo forgets everything when the tab closes
 if (DEMO) addEventListener("DOMContentLoaded", () => document.body.insertAdjacentHTML("afterbegin",
-  `<div style="background:#123122;color:#fff;font:13px/1.4 system-ui,sans-serif;padding:8px max(16px,env(safe-area-inset-left,0px));text-align:center">Demo version: search real games and make real templates. Bookings and the job board use sample data. Made by <a href="https://ashergreenephoto.com" style="color:#fff">Asher Greene Photo</a>.</div>`));
+  `<div style="background:#123122;color:#fff;font:13px/1.4 system-ui,sans-serif;padding:8px max(16px,env(safe-area-inset-left,0px));text-align:center">Demo version: search real games and make real templates. Bookings and the job board use sample data. Made by <a href="https://ashergreenephoto.com" style="color:#fff">Asher Greene Photo</a>. <a href="https://github.com/ashecrtv/Metadata-Template-Builder" style="color:#fff;font-weight:700">Like it? Get the free code and make your own →</a></div>`));
 </script>
 
 <meta name="description" content="Request photo coverage from Asher Greene: games, events, portraits and brand shoots.">

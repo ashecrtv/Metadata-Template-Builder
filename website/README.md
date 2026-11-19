@@ -21,7 +21,7 @@ Built by Asher Greene, an Atlanta sports photographer ([ashergreenephoto.com](ht
 - **Photo Mechanic output:** an XMP metadata template (caption, headline, event, location, credit, copyright, keywords), a code replacements file (players, coaches and action phrases), and an ingest file name like `20261031_SLAM_ATLvsGSV_AG_` (Photo Mechanic adds the sequence number).
 - **Custom shoots:** events, portraits and brand shoots get a general overview caption; games ESPN doesn't list can be entered by hand.
 - **Your own codes:** team code, player prefix and tricode overrides are remembered per team.
-- **Phone-friendly** and light/dark themed. No build step: each page is a single HTML file.
+- **Phone-friendly.** No build step: each page is a single HTML file.
 
 ![Roster read from game notes](docs/roster-from-game-notes.jpg)
 
