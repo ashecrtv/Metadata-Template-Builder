@@ -77,6 +77,7 @@ button:disabled{opacity:.6;cursor:default}
     <input type="hidden" name="form-name" value="booking">
     <input type="hidden" name="open_in_builder" id="shortLink">
     <input type="hidden" name="ref" id="refCode">
+    <input type="hidden" name="subject" id="subjectLine">
     <input type="hidden" name="builder_link" id="builderLink">
     <p hidden><label>Leave this empty<input maxlength="200" name="company_site"></label></p>
 
@@ -330,6 +331,7 @@ F.addEventListener("submit", async e => {
   let ref = "";
   if (!DEMO) try { ref = (await (await fetch("/api/next-ref", { method:"POST" })).json()).ref || ""; } catch(err){}
   if (!ref) ref = "ASHE-" + Array.from(crypto.getRandomValues(new Uint8Array(4)), n => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");   // no server: still unique
+  $("#subjectLine").value = `New booking ${ref}: ${d.event_name || "Shoot"}${d.org ? " (" + d.org + ")" : ""}`;   // Netlify uses this as the email subject
   $("#refCode").value = ref; $("#shortLink").value = new URL("index.html?ref=" + ref, location.href).href;
   const link = builderLink(d); $("#builderLink").value = link;   // long link kept as a backup: it works without the job board
   $("#send").disabled = true; $("#send").textContent = "Send request"; $("#status").textContent = "Sending…";
