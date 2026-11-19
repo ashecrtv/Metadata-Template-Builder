@@ -352,7 +352,7 @@ F.addEventListener("submit", e => {
 });
 $("#crewFiles").addEventListener("click", async e => {
   const d = e.target.closest("[data-crewdl]"), c = e.target.closest("[data-crewcopy]"), cf = EDIT.crewFiles || [];
-  if (d){ const f = cf[+d.dataset.crewdl]; saveFile(f.xmp.text, f.xmp.name, "application/rdf+xml"); }
+  if (d){ const f = cf[+d.dataset.crewdl]; saveFile(f.xmp.text, f.xmp.name, "application/octet-stream"); }
   if (c){ const f = cf[+c.dataset.crewcopy]; try { await navigator.clipboard.writeText(f.filename); c.textContent = "Copied ✓"; } catch(err){ c.textContent = f.filename; } }
 });
 $("#cancelBtn").onclick = () => $("#dlg").close();
@@ -374,7 +374,7 @@ box.addEventListener("dragover", e => { e.preventDefault(); box.classList.add("o
 box.addEventListener("dragleave", () => box.classList.remove("over"));
 box.addEventListener("drop", e => { e.preventDefault(); box.classList.remove("over"); takeXmp(e.dataTransfer.files[0]); });
 const saveFile = (text, name, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
-$("#xmpGet").onclick = () => XMP && saveFile(XMP.text, XMP.name, "application/rdf+xml");
+$("#xmpGet").onclick = () => XMP && saveFile(XMP.text, XMP.name, "application/octet-stream");   // keeps the .XMP name in Safari
 
 // Ingest file name, same pattern as the builder: YYYYMMDD_Client_What_Initials_ (Photo Mechanic adds the sequence)
 function fileNameFor(j){
