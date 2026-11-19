@@ -1,6 +1,7 @@
 // Add-only door to the job board: the builder saves a template here without the passcode.
 // It can create a job or fill in a job's blank fields and attach templates. It can't read, list, change or delete anything else.
 import { getStore } from "@netlify/blobs";
+import { nextRef } from "./next-ref.mjs";
 
 const same = (x, y) => String(x || "").trim().toLowerCase() === String(y || "").trim().toLowerCase();
 const str = v => String(v ?? "").slice(0, 2000);
@@ -31,6 +32,7 @@ export default async (req) => {
       for (const k of ["type", "venue", "address", "city", "state", "subjects", "keywords", "photographer"]) if (bk[k]) j[k] = str(bk[k]);
       seen.push(bk.sub);
     }
+    if (!j.ref) j.ref = (bk && bk.ref) || await nextRef(store);
     jobs.push(j);
   }
   for (const k of FILL) if (fill[k] && !String(j[k] || "").trim()) j[k] = str(fill[k]);   // only blanks: what the booking or you typed stays

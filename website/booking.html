@@ -327,7 +327,9 @@ F.addEventListener("submit", async e => {
     $("#status").textContent = `${new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" })} is in the past. If that's right, click Yes, send it.`;
     $("#send").textContent = "Yes, send it"; return;
   }
-  const ref = Array.from(crypto.getRandomValues(new Uint8Array(6)), n => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");   // no 0/O or 1/I
+  let ref = "";
+  if (!DEMO) try { ref = (await (await fetch("/api/next-ref", { method:"POST" })).json()).ref || ""; } catch(err){}
+  if (!ref) ref = "ASHE-" + Array.from(crypto.getRandomValues(new Uint8Array(4)), n => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");   // no server: still unique
   $("#refCode").value = ref; $("#shortLink").value = new URL("index.html?ref=" + ref, location.href).href;
   const link = builderLink(d); $("#builderLink").value = link;   // long link kept as a backup: it works without the job board
   $("#send").disabled = true; $("#send").textContent = "Send request"; $("#status").textContent = "Sending…";

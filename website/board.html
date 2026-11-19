@@ -56,6 +56,8 @@ td small{display:block;color:var(--muted)}
 .col{background:var(--soft);border-radius:12px;padding:10px;min-height:200px}
 .col h3{margin:2px 4px 10px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between}
 .col.over{outline:2px dashed var(--accent)}
+.zone{border-radius:12px;padding:6px;margin:-6px}.zone.over{outline:2px dashed var(--accent);outline-offset:2px}
+tr[draggable]{cursor:grab}
 .archgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:8px;cursor:grab}
 .card b{display:block;margin-bottom:2px}.card .m{color:var(--muted);font-size:12px}
@@ -238,10 +240,10 @@ function renderTable(list){
   });
   if (!list.length) return `<div class="tablebox"><div class="empty">No jobs yet. Add one from a booking link, or start a new job.</div></div>`;
   return `<div class="tablebox"><table><thead><tr>${COLS.map(([k, l]) => `<th data-sort="${k}">${l}${SORT.k === k ? (SORT.dir > 0 ? " ↑" : " ↓") : ""}</th>`).join("")}</tr></thead><tbody>${list.map(j => `
-    <tr data-id="${j.id}">
+    <tr data-id="${j.id}" draggable="true">
       <td><span class="pill ${stc(j.status)}">${j.status}</span></td>
       <td>${esc(fmtDate(j.date))}<small>${esc(when(j))}</small></td>
-      <td><b>${esc(title(j))}</b><small>${esc(TYPES[j.type] || "")}</small></td>
+      <td><b>${esc(title(j))}</b><small>${esc([j.ref, TYPES[j.type]].filter(Boolean).join(" · "))}</small></td>
       <td>${esc(j.org)}<small>${esc([j.department, j.contact].filter(Boolean).join(" · "))}</small></td>
       <td>${esc(j.venue)}<small>${esc(where(j))}</small></td>
       <td>${esc(j.photographer) || '<span class="miss">—</span>'}</td>
@@ -279,11 +281,13 @@ function render(){
   summary();
   $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === VIEW));
   const all = filtered(), list = all.filter(j => !j.archived), arch = all.filter(j => j.archived).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  $("#view").innerHTML = `<h2 style="margin:0 0 10px;font-size:16px">Current projects</h2>` + (VIEW === "board" ? renderBoard(list) : VIEW === "cal" ? renderCal(list) : renderTable(list)) +
-    `<div class="col" data-col="archive" style="margin-top:22px;min-height:90px"><h3><span>Archived projects</span><span>${arch.length}</span></h3>
-      <p class="note" style="margin:0 0 8px">Drag a finished project here, or open it and tap Archive. Drag it back to a status column to bring it back.</p>
-      <div class="archgrid">${arch.map(j => `<div class="card" draggable="true" data-id="${j.id}"><b>${esc(title(j))}</b><div class="m">${esc(j.org)} · ${esc(fmtDate(j.date))}</div>
-        <button type="button" class="ghost" data-stop data-unarch="${j.id}" style="margin-top:6px;font-size:12px;padding:4px 8px">Back to current</button></div>`).join("") || '<p class="note">Nothing archived yet.</p>'}</div></div>`;
+  const draw = l => VIEW === "board" ? renderBoard(l) : VIEW === "cal" ? renderCal(l) : renderTable(l);
+  $("#view").innerHTML = `<div class="zone" data-zone="current"><h2 style="margin:0 0 10px;font-size:16px">Current projects</h2>${draw(list)}</div>
+    <div class="zone" data-zone="archive" style="margin-top:26px"><h2 style="margin:0 0 4px;font-size:16px">Archived projects <span class="note">${arch.length}</span></h2>
+      <p class="note" style="margin:0 0 10px">Drag a project here to archive it, or set it to Delivered. Drag it back up to make it current again.</p>
+      ${arch.length ? (VIEW === "cal" ? renderTable(arch) : draw(arch)) : '<div class="tablebox"><div class="empty">Nothing archived yet.</div></div>'}</div>`;
+  return;
+
 }
 
 /* ---------- Edit dialog ---------- */
@@ -298,6 +302,7 @@ function openJob(j){
   EDIT = j || { id:uid(), status:"Requested", type:"event", created:new Date().toISOString() };
   $("#dlgTitle").textContent = j ? title(j) : "New job";
   [...F.elements].forEach(el => { if (el.name) el.value = EDIT[el.name] ?? ""; });
+  F.elements.status.dataset.was = EDIT.status || "";
   XMP = EDIT.xmp || null; showXmp();
   const cf = EDIT.crewFiles || [];   // made by the builder's Save to job board, one per crew member
   $("#crewFiles").hidden = !cf.length;
@@ -312,6 +317,7 @@ function openJob(j){
 F.addEventListener("submit", e => {
   if (e.submitter?.value !== "save") return;
   [...F.elements].forEach(el => { if (el.name) EDIT[el.name] = el.value.trim(); });
+  if (EDIT.status === "Delivered") EDIT.archived = true; else if (EDIT.archived && EDIT.status !== "Delivered" && F.elements.status.dataset.was === "Delivered") EDIT.archived = false;
   EDIT.xmp = XMP;
   const i = JOBS.findIndex(j => j.id === EDIT.id); if (i >= 0) JOBS[i] = EDIT; else JOBS.push(EDIT);
   save(); render();
@@ -429,13 +435,20 @@ $("#q").addEventListener("input", render); $("#fPhot").addEventListener("change"
 
 // Drag cards between status columns
 let dragId = null;
-document.addEventListener("dragstart", e => { const c = e.target.closest(".card"); if (c){ dragId = c.dataset.id; e.dataTransfer.effectAllowed = "move"; } });
-document.addEventListener("dragover", e => { const col = e.target.closest(".col"); if (col && dragId){ e.preventDefault(); $$(".col").forEach(x => x.classList.toggle("over", x === col)); } });
+document.addEventListener("dragstart", e => { const c = e.target.closest("[data-id][draggable]"); if (c){ dragId = c.dataset.id; e.dataTransfer.effectAllowed = "move"; } });
+document.addEventListener("dragover", e => { if (!dragId) return; const t = e.target.closest(".col") || e.target.closest(".zone"); if (t){ e.preventDefault(); $$(".col,.zone").forEach(x => x.classList.toggle("over", x === t)); } });
 document.addEventListener("drop", e => {
-  const col = e.target.closest(".col"); if (!col || !dragId) return; e.preventDefault();
-  const j = JOBS.find(x => x.id === dragId); if (j){ if (col.dataset.col === "archive") j.archived = true; else { j.archived = false; j.status = col.dataset.col; } save(); } dragId = null; render();
+  if (!dragId) return; const col = e.target.closest(".col"), zone = e.target.closest(".zone"); if (!col && !zone) return; e.preventDefault();
+  const j = JOBS.find(x => x.id === dragId);
+  if (j){
+    if (zone?.dataset.zone === "archive") j.archived = true;
+    else { j.archived = false; if (col?.dataset.col) j.status = col.dataset.col; if (j.status === "Delivered" && !col) j.status = "In progress"; }   // dragged back up: no longer delivered
+    if (col?.dataset.col === "Delivered") j.archived = true;
+    save();
+  }
+  dragId = null; render();
 });
-document.addEventListener("dragend", () => { dragId = null; $$(".col").forEach(x => x.classList.remove("over")); });
+document.addEventListener("dragend", () => { dragId = null; $$(".col,.zone").forEach(x => x.classList.remove("over")); });
 
 /* ---------- Back up / restore ---------- */
 $("#exportBtn").onclick = () => saveFile(JSON.stringify(JOBS, null, 2), `Job board backup ${new Date().toISOString().slice(0, 10)}.json`, "application/json");

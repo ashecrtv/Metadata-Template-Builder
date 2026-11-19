@@ -2821,6 +2821,7 @@ async function saveToBoard(opts = {}){
       if (bk){ Object.assign(j, { sub:bk.sub, contact:bk.name || "", email:bk.email || "", phone:bk.phone || "", department:bk.department || "", start:bk.start || "", end:bk.end || "",
         duration:bk.duration || "", coverage:bk.coverage || "", deadline:bk.deadline || "", usage:bk.usage || "", shotlist:bk.shotlist || "", notes:bk.notes || "",
         dayof:[bk.dayof_name, bk.dayof_phone].filter(Boolean).join(" · ") }); seen.push(bk.sub); }
+      j.ref = bk?.ref || ""; if (!j.ref) try { j.ref = (await (await fetch("/api/next-ref", { method:"POST" })).json()).ref || ""; } catch(err){}
       jobs.push(j);
     }
     readGame(); venueMemory.put(S.game.venue, S.game.city, S.game.state);
