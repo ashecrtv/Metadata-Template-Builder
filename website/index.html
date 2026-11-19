@@ -2782,7 +2782,7 @@ $("#gStyle").value = STYLES[CFG.style] ? CFG.style : "getty";
 $("#browseDate").value = new Date().toISOString().slice(0,10);
 $("#ascii").checked = !!CFG.ascii;
 renderCols();
-loadAll().then(()=>{ const P = new URLSearchParams(location.search), q = P.get("q"); if (P.get("draft")) runDraft(P.get("book"), P.get("draft")); else if (P.get("book")) loadBooking(P.get("book")); else if (P.get("ref")) loadRef(P.get("ref")); else if (WORK[+P.get("gallery") - 1]) tryWork(+P.get("gallery") - 1);   // ?gallery=1..5 opens a showcase gallery (used by the demo board) else if (q){ $("#q").value = q; search(); } });
+loadAll().then(()=>{ const P = new URLSearchParams(location.search), q = P.get("q"); if (P.get("draft")) runDraft(P.get("book"), P.get("draft")); else if (P.get("book")) loadBooking(P.get("book")); else if (P.get("ref")) loadRef(P.get("ref")); else if (WORK[+P.get("gallery") - 1]) tryWork(+P.get("gallery") - 1); /* ?gallery=1..5 opens a showcase gallery (used by the demo board) */ else if (q){ $("#q").value = q; search(); } });
 /* A booking from booking.html arrives as ?book=<base64 JSON>: fill the client, keywords and custom shoot, then build. */
 
 /* ---------- Save to job board: the template + file name go onto the booking's job (same site, passcode-locked API) ---------- */
