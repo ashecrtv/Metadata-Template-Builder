@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en" data-theme="light">
 <head>
-<script>try{ localStorage.removeItem("rcb.theme"); }catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Metadata Template Builder</title>
@@ -34,18 +33,6 @@ if (DEMO) addEventListener("DOMContentLoaded", () => document.body.insertAdjacen
   --accent:#123122; --accent-hover:#1e4a35; --accent-ink:#f6f5f0; --soft:#efede5; --ok:#1f6b3f; --warn:#8a5a00; --bad:#b3261e;
   --okbg:#e3efe6; --warnbg:#fbf0dc; --badbg:#fbe5e3; --autobg:#e2ece5; --autoink:#123122; --codebg:#f4e7d2; --codeink:#7a4b12;
   --mono:"SF Mono",ui-monospace,Menlo,monospace; --sans:"Inter Tight",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#121212; --panel:#1a1a19; --ink:#f6f5f0; --muted:#a3a199; --line:#2e2d2a;
-    --accent:#8fc4a3; --accent-hover:#a9d5b9; --accent-ink:#121212; --soft:#22221f; --ok:#8fd0a5; --warn:#f0bf6a; --bad:#ff8a80;
-    --okbg:#1c3226; --warnbg:#3a2c12; --badbg:#3d1a18; --autobg:#1f3328; --autoink:#a9d5b9; --codebg:#3a2e1e; --codeink:#e8c08a;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#121212; --panel:#1a1a19; --ink:#f6f5f0; --muted:#a3a199; --line:#2e2d2a;
-  --accent:#8fc4a3; --accent-hover:#a9d5b9; --accent-ink:#121212; --soft:#22221f; --ok:#8fd0a5; --warn:#f0bf6a; --bad:#ff8a80;
-  --okbg:#1c3226; --warnbg:#3a2c12; --badbg:#3d1a18; --autobg:#1f3328; --autoink:#a9d5b9; --codebg:#3a2e1e; --codeink:#e8c08a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
