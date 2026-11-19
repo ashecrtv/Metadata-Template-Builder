@@ -202,9 +202,31 @@ let CLOUD = false, SEEN = [], pushT = 0;
 const save = () => {
   if (window.DEMO) return;
   try { localStorage.setItem(KEY, JSON.stringify(JOBS)); } catch(e){ if (!CLOUD) alertNote("Couldn't save in this browser. Use Back up."); }
-  if (CLOUD){ clearTimeout(pushT); pushT = setTimeout(() => fetch("/api/jobs", { method:"PUT", headers:{ "Content-Type":"application/json", "x-board-key":BKEY() }, body:JSON.stringify({ jobs:JOBS, seen:SEEN }) })
-    .catch(() => alertNote("Couldn't reach the server. Changes are kept in this browser for now.")), 400); }
+  if (CLOUD){ clearTimeout(pushT); pushT = setTimeout(push, 400); }
 };
+// Server saves: send only on top of the version we last saw. If something else saved meanwhile (a booking, the builder,
+// another device), the server refuses with its current data; we keep our own edits and deletions on top of it and retry.
+let BASE = null, SNAP = new Map();
+const snapFrom = jobs => { SNAP = new Map(jobs.map(j => [j.id, JSON.stringify(j)])); };
+async function push(){
+  for (let tries = 0; tries < 4; tries++){
+    let r;
+    try { r = await fetch("/api/jobs", { method:"PUT", headers:{ "Content-Type":"application/json", "x-board-key":BKEY() }, body:JSON.stringify({ jobs:JOBS, seen:SEEN, base:BASE }) }); }
+    catch(e){ alertNote("Couldn't reach the server. Changes are kept in this browser for now."); return; }
+    if (r.ok){ BASE = (await r.json()).etag || null; snapFrom(JOBS); return; }
+    if (r.status !== 409) return;
+    const cur = await r.json(), mine = new Map(JOBS.map(j => [j.id, j]));
+    const changed = new Set(JOBS.filter(j => SNAP.get(j.id) !== JSON.stringify(j)).map(j => j.id));
+    const deleted = new Set([...SNAP.keys()].filter(id => !mine.has(id)));
+    const theirs = (cur.jobs || []).filter(j => !deleted.has(j.id)).map(j => changed.has(j.id) ? mine.get(j.id) : j);
+    const ids = new Set(theirs.map(j => j.id));
+    JOBS = theirs.concat(JOBS.filter(j => !ids.has(j.id) && changed.has(j.id)));   // keep new local jobs too
+    SEEN = [...new Set([...(cur.seen || []), ...SEEN])];
+    BASE = cur.etag || null; snapFrom(cur.jobs || []);
+    try { localStorage.setItem(KEY, JSON.stringify(JOBS)); } catch(e){}
+    render();
+  }
+}
 let JOBS = load().map(j => j.status === "Shot" ? { ...j, status:"In progress" } : j), VIEW = "table", SORT = { k:"date", dir:1 }, CAL = new Date(), EDIT = null;
 try { VIEW = localStorage.getItem("ashe.boardView") || "table"; } catch(e){}
 const alertNote = t => { $("#summary").textContent = t; };
@@ -486,7 +508,7 @@ async function sync(){
     const r = await fetch("/api/jobs", { headers:{ "x-board-key":BKEY() } });
     if (r.status === 401){ $("#lockForm").hidden = false; $("#syncNote").textContent = "Locked. Enter your passcode to see your jobs."; return; }
     if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return;   // no server here (local copy): this browser only
-    const d = await r.json(); $("#lockForm").hidden = true; CLOUD = true; SEEN = d.seen || []; (d.jobs || []).forEach(j => { if (j.status === "Shot") j.status = "In progress"; });
+    const d = await r.json(); $("#lockForm").hidden = true; CLOUD = true; SEEN = d.seen || []; BASE = d.etag || null; snapFrom(d.jobs || []); (d.jobs || []).forEach(j => { if (j.status === "Shot") j.status = "In progress"; });
     const have = new Set(d.jobs.map(j => j.id));
     JOBS = d.jobs.concat(JOBS.filter(j => !have.has(j.id)));   // anything only in this browser moves up to the server
     let added = 0;

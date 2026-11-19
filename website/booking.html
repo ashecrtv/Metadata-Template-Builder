@@ -284,6 +284,7 @@ $("#gameQ").addEventListener("input", () => { clearTimeout(gtimer); const q = $(
 $("#gameRes").addEventListener("click", e => {
   const b = e.target.closest("[data-g]"); if (!b) return; const ev = GAMES[+b.dataset.g], c = ev.competitions[0], d = new Date(ev.date);
   const h = c.competitors.find(x => x.homeAway === "home"), a = c.competitors.find(x => x.homeAway === "away"), pad = n => String(n).padStart(2, "0");
+  if (!a?.team || !h?.team){ $("#gameRes").textContent = "That game is missing its teams on ESPN. Type the matchup below instead."; return; }
   $("#eventName").value = `${a.team.displayName} vs ${h.team.displayName}`;
   F.elements.date.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   F.elements.start.value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -328,8 +329,9 @@ F.addEventListener("submit", async e => {
     $("#status").textContent = `${new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" })} is in the past. If that's right, click Yes, send it.`;
     $("#send").textContent = "Yes, send it"; return;
   }
-  let ref = "";
-  if (!DEMO) try { ref = (await (await fetch("/api/next-ref", { method:"POST" })).json()).ref || ""; } catch(err){}
+  if (F.dataset.busy) return; F.dataset.busy = "1"; $("#send").disabled = true;   // a double click can't send twice
+  let ref = F.dataset.ref || "";   // a retry keeps the number it already got
+  if (!ref && !DEMO) try { ref = (await (await fetch("/api/next-ref", { method:"POST" })).json()).ref || ""; } catch(err){}
   if (!ref) ref = "ASHE-" + Array.from(crypto.getRandomValues(new Uint8Array(4)), n => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");   // no server: still unique
   $("#subjectLine").value = `New booking ${ref}: ${d.event_name || "Shoot"}${d.org ? " (" + d.org + ")" : ""}`;   // Netlify uses this as the email subject
   $("#refCode").value = ref; $("#shortLink").value = new URL("index.html?ref=" + ref, location.href).href;
@@ -343,7 +345,7 @@ F.addEventListener("submit", async e => {
     sent = r.ok;
   } catch(err){}
   const local = DEMO || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.protocol === "file:";
-  if (!sent && !local){ $("#send").disabled = false; $("#status").textContent = "That didn't go through. Please try again, or email me directly."; return; }
+  if (!sent && !local){ F.dataset.ref = ref; delete F.dataset.busy; $("#send").disabled = false; $("#status").textContent = "That didn't go through. Please try again, or email me directly."; return; }
   const all = store.get(); all[nameKey(d.name)] = Object.fromEntries(KEEP.map(k => [k, d[k] || ""])); store.set(all);
   $("#formView").hidden = true; $("#doneView").hidden = false; window.scrollTo(0, 0);
   if (!sent){ $("#localNote").hidden = false; $("#openBuilder").href = link; if (DEMO) $("#localWhy").textContent = "This is the demo, so nothing was sent. In the real version, the owner gets an email with this link, and the builder makes the template from it."; }
