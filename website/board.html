@@ -165,13 +165,11 @@ dialog[open]{animation:pop 200ms cubic-bezier(.23,1,.32,1)}dialog[open]::backdro
     <div class="sec full">Templates</div>
     <div class="xmpbox" id="xmpBox">
       <div style="flex:1;min-width:200px"><b id="mainWho">Main photographer</b>
-        <input name="filename" id="fileName" spellcheck="false" aria-label="Ingest file name" title="Ingest file name: paste into Photo Mechanic → Ingest → Rename" style="display:block;width:100%;margin:4px 0 2px;font-family:ui-monospace,Menlo,monospace;font-size:13px">
+        <input name="filename" id="fileName" readonly aria-label="Ingest file name" class="note" style="display:block;width:100%;margin:2px 0;padding:0;border:0;background:none;font-family:ui-monospace,Menlo,monospace">
         <div class="note" id="xmpName">Drop the .XMP here, or choose it.</div></div>
       <button type="button" class="ghost" id="xmpGet" hidden>Download .XMP</button>
       <button type="button" class="ghost" id="fnCopy">Copy file name</button>
       <button type="button" class="ghost" id="xmpPick">Choose .XMP</button>
-      <button type="button" class="ghost" id="xmpDel" hidden>Remove</button>
-      <button type="button" class="ghost" id="fnMake" title="Rebuild the file name from the date, client, event and photographer" style="font-size:12px">Rebuild name</button>
       <input type="file" id="xmpFile" accept=".xmp,.XMP" hidden>
     </div>
     <div class="full" id="crewFiles" hidden></div>
@@ -324,7 +322,7 @@ F.elements.status.innerHTML = STATUSES.map(s => `<option>${s}</option>`).join(""
 let XMP = null;
 function showXmp(){
   $("#xmpName").textContent = XMP ? XMP.name : "Drop the .XMP here, or choose it.";
-  $("#xmpGet").hidden = $("#xmpDel").hidden = !XMP;
+  $("#xmpGet").hidden = !XMP; $("#xmpPick").hidden = !!XMP;   // with a template: just Download and Copy, like the crew rows
 }
 function openJob(j){
   EDIT = j || { id:uid(), status:"Requested", type:"event", created:new Date().toISOString() };
@@ -373,7 +371,6 @@ const box = $("#xmpBox");
 box.addEventListener("dragover", e => { e.preventDefault(); box.classList.add("over"); });
 box.addEventListener("dragleave", () => box.classList.remove("over"));
 box.addEventListener("drop", e => { e.preventDefault(); box.classList.remove("over"); takeXmp(e.dataTransfer.files[0]); });
-$("#xmpDel").onclick = () => { XMP = null; showXmp(); };
 const saveFile = (text, name, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
 $("#xmpGet").onclick = () => XMP && saveFile(XMP.text, XMP.name, "application/rdf+xml");
 
@@ -384,7 +381,6 @@ function fileNameFor(j){
   return `${(j.date || "").replace(/-/g, "") || "YYYYMMDD"}_${clean(j.org) || "CLIENT"}_${clean(j.name) || "SHOOT"}_${ini}_`;
 }
 const formJob = () => { const o = { ...EDIT }; [...F.elements].forEach(el => { if (el.name) o[el.name] = el.value.trim(); }); return o; };
-$("#fnMake").onclick = () => { $("#fileName").value = fileNameFor(formJob()); };
 $("#fnCopy").onclick = async () => {
   const v = $("#fileName").value || fileNameFor(formJob()); $("#fileName").value = v;
   try { await navigator.clipboard.writeText(v); } catch(e){ $("#fileName").select(); document.execCommand("copy"); }
@@ -392,7 +388,6 @@ $("#fnCopy").onclick = async () => {
 };
 // Fill it in while the name is still the automatic one
 ["date","org","name","photographer"].forEach(n => F.elements[n].addEventListener("input", () => { if ($("#fileName").dataset.auto === "1") $("#fileName").value = fileNameFor(formJob()); }));
-$("#fileName").addEventListener("input", e => e.target.dataset.auto = "");
 
 // Open this job in the metadata builder (same link format the booking form makes)
 function builderLink(j){

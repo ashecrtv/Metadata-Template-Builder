@@ -426,9 +426,11 @@ body.noscroll{overflow:hidden}
       <div class="step-h"><span class="n">Step 4</span><h2>Download</h2></div>
       <p class="step-help">Load these into Photo Mechanic: the metadata template on ingest, and, for games, the code file under Code Replacements and the Structured Keywords list.</p>
       <div class="panel" id="sendPanel" style="margin-bottom:16px">
-        <div class="row" style="gap:10px;flex-wrap:wrap;align-items:center"><button class="primary" id="sendBoard" type="button">Confirm &amp; send to board</button><span class="small muted">One click: saves this job to the board and gives you everything to download below.</span></div>
+        <div class="row" style="gap:10px;flex-wrap:wrap;align-items:center"><button class="primary" id="sendBoard" type="button">Confirm &amp; send to board</button></div>
         <div id="sendCard" style="margin-top:12px" hidden></div>
+        <input type="password" id="boardKeyIn" hidden><div id="toBoardOut" hidden></div>
       </div>
+      <div id="afterSend" hidden>
       <div class="dl-grid">
         <div class="panel">
           <h2 style="margin:0">Metadata template</h2>
@@ -443,12 +445,6 @@ body.noscroll{overflow:hidden}
           <div class="small muted" style="margin:4px 0 6px">Click to edit. It ends with "_" so Photo Mechanic can add its own sequence number (turn on Sequence in Ingest → Rename). <button class="link" id="ingestReset" type="button" hidden>Use the automatic name</button></div>
           <button class="small" data-copy="ingestOut">Copy file name</button>
         </div>
-        <div class="panel">
-          <h2 style="margin:0">Job board</h2>
-          <p class="small muted">Attach this template and the ingest file name to the job, so they're waiting on the board.</p>
-          <form id="boardForm" class="row" style="gap:8px;flex-wrap:wrap"><input type="password" id="boardKeyIn" placeholder="Owner passcode" autocomplete="current-password" style="flex:1;min-width:140px" hidden><button class="primary" id="toBoard">Save to job board</button></form>
-          <div class="small muted" id="toBoardOut" style="margin-top:6px"></div>
-        </div>
       </div>
       <div class="panel codeOnly" style="margin-top:16px">
         <h2>Code replacement file</h2>
@@ -457,11 +453,10 @@ body.noscroll{overflow:hidden}
           <pre class="out" id="out"></pre>
         </details>
         <div class="row" style="margin-top:12px">
-          <button class="primary" id="dlBoth">Download game file (both teams)</button>
+          <button class="primary" id="dlBoth">Download code template (both teams)</button>
           <button id="dl0">Team 1 only</button>
           <button id="dl1">Team 2 only</button>
           <button id="copyOut">Copy</button>
-          <button id="printCheat">Print cheat sheet</button>
         </div>
         <p class="small muted" style="margin-bottom:0">In Photo Mechanic: Image ▸ Code Replacements… (or Preferences ▸ Code Replacements), load this .txt and set the delimiter to the same character as in Step 2.</p>
       </div>
@@ -472,16 +467,15 @@ body.noscroll{overflow:hidden}
           <button class="small" id="dlStruct">Download Structured Keywords (.txt)</button>
         </div>
       </div>
+      </div>
     </section>
 
-    <section class="step" id="moreStep">
+    <section class="step" id="moreStep" hidden>
       <div class="panel">
         <h2 style="margin:0">Make more templates</h2>
         <p class="small muted">Your name, client and settings carry over.</p>
         <div class="row" style="gap:8px;flex-wrap:wrap">
           <button class="primary small" type="button" id="moreAnother">Create another template</button>
-          <button class="small" type="button" id="moreCrew">Templates for the other photographers (.zip)</button>
-          <button class="small codeOnly" type="button" id="moreSeason">Season templates (home, away or all)</button>
         </div>
         <div class="small muted" id="moreOut" style="margin-top:6px"></div>
       </div>
@@ -2623,10 +2617,9 @@ document.addEventListener("click", async e=>{
   if (t.id==="phraseReset"){ const a = S.sides[0]; if (a && CFG.phraseText) { delete CFG.phraseText[sportOf(a.L)]; saveCfg(); } $("#phraseBox").blur(); return renderAll(); }
   if (t.id==="dlBoth") return download(fileText(S.sides), gameFileName());
   if (t.id==="dlXmp" && S.multi && S.gameConfirmed) return exportBatch();
-  if (t.id==="dlXmp"){ if (!S.sides[0] && !S.custom) return; if (S.booking) saveToBoard();   // a booked job: the template also goes onto the board
+  if (t.id==="dlXmp"){ if (!S.sides[0] && !S.custom) return; 
     return download(xmpText(), xmpFileName()); }
   if (t.id==="dl0" || t.id==="dl1"){ const s = S.sides[+t.id.slice(2)]; return download(fileText([s]), `${s.L.n.replace(/\W+/g,"")}_${s.teamName.replace(/\W+/g,"")}_Roster.txt`); }
-  if (t.id==="printCheat"){ buildCheat(); return window.print(); }
 });
 document.addEventListener("change", async e=>{
   const t = e.target, d = t.dataset;
@@ -2870,30 +2863,18 @@ async function saveToBoardOpen(opts = {}){
       <div class="small muted">Already had a template? It's kept as it was; open the board to replace it.</div>`;
   } catch(e){ out.textContent = "Couldn't reach the job board (it only works on the live site). Download the template instead."; }
 }
-$("#boardForm").addEventListener("submit", e => { e.preventDefault(); saveToBoard(); });
-// Confirm & send: save to the board, then one card with every file for this job.
+// Confirm & send: save to the board, then show the download boxes below.
 document.addEventListener("click", async e => {
-  const t = e.target.closest("#sendBoard, [data-send]"); if (!t) return;
+  const t = e.target.closest("#sendBoard"); if (!t) return;
   const card = $("#sendCard");
-  if (t.id === "sendBoard"){
-    if (!S.sides[0] && !S.custom){ card.hidden = false; card.textContent = "Build the template first (Steps 1 to 3)."; return; }
-    t.disabled = true; card.hidden = false; card.textContent = "Sending to the board…"; S.sent = null;
-    await saveToBoard(); t.disabled = false;
-    const s = S.sent, game = !S.custom && S.sides[1], name = $("#ingestOut").value.trim() || ingestName(), crew = s?.crew || [];
-    S.sendFiles = crew;
-    card.classList.remove("rise"); void card.offsetWidth; card.classList.add("rise");   // replay the entrance on each send
-    card.innerHTML = `<div class="small" style="margin-bottom:10px">${s ? `<b>Sent to the board.</b>${s.kept ? " This job already had a template, so the board kept that one." : ""}` : esc($("#toBoardOut").textContent)}</div>
-      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" data-send="xmp" type="button">Download template (.XMP)</button>${game ? `<button data-send="code" type="button">Download code replacement file</button>` : ""}</div>
-      <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><span class="small muted">Ingest file name</span><code style="font-family:var(--mono);font-size:13px;word-break:break-all">${esc(name)}</code><button class="small" data-send="name" type="button">Copy</button></div>
-      ${crew.length ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><span class="small muted">Crew templates</span>${crew.map((c, i) => `<button class="small" data-send="crew" data-i="${i}" type="button">Download: ${esc(c.name)}</button>`).join("")}</div>` : ""}
-      ${s ? `<a href="board.html${s.id ? "?job=" + encodeURIComponent(s.id) : ""}">Open this job on the board →</a>` : ""}`;
-    return;
-  }
-  const k = t.dataset.send;
-  if (k === "xmp") return download(xmpText(), xmpFileName());
-  if (k === "code") return download(fileText(S.sides), gameFileName());
-  if (k === "name") return copy($("#ingestOut").value.trim() || ingestName(), t);
-  if (k === "crew"){ const c = S.sendFiles[+t.dataset.i]; if (c) download(c.xmp.text, c.xmp.name || c.name + ".XMP"); }
+  if (!S.sides[0] && !S.custom){ card.hidden = false; card.textContent = "Build the template first (Steps 1 to 3)."; return; }
+  t.disabled = true; card.hidden = false; card.textContent = "Sending to the board…"; S.sent = null;
+  await saveToBoard(); t.disabled = false;
+  const s = S.sent;
+  card.classList.remove("rise"); void card.offsetWidth; card.classList.add("rise");   // replay the entrance on each send
+  card.innerHTML = `<div class="small">${s ? `<b>Sent to the board.</b>${s.kept ? " This job already had a template, so the board kept that one." : ""} <a href="board.html${s.id ? "?job=" + encodeURIComponent(s.id) : ""}">Open this job on the board →</a>` : esc($("#toBoardOut").textContent)}</div>`;
+  $("#afterSend").hidden = $("#moreStep").hidden = false;
+  $("#afterSend").classList.remove("rise"); void $("#afterSend").offsetWidth; $("#afterSend").classList.add("rise");
 });
 
 /* ---------- Start: ask what the shoot is; Start over clears everything (your saved settings stay) ---------- */
