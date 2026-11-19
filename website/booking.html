@@ -108,7 +108,7 @@ button:disabled{opacity:.6;cursor:default}
       <label><span id="nameLabel">Event name</span> <span class="req">*</span><input maxlength="200" name="event_name" id="eventName" required placeholder="e.g. Spring Alumni Dinner"></label>
       <label>Special or themed event <span style="font-weight:400;color:var(--muted)">(optional)</span><input maxlength="120" name="theme" placeholder="e.g. Senior Night, Salute to Service, Pride Night, Home Opener"></label>
       <label>Preferred photographer <small>(optional)</small><input maxlength="200" name="photographer" placeholder="Leave blank if anyone on the team works"></label>
-      <label>Key Subjects and/or Keywords <small>(people, teams, sponsors or words to tag, comma-separated)</small><input maxlength="200" name="subjects" placeholder="e.g. Bijan Robinson, Arthur Blank, Coca-Cola"></label>
+      <label>People, teams or sponsors to tag <small>(separate with commas)</small><input maxlength="200" name="subjects" placeholder="e.g. Bijan Robinson, Arthur Blank, Coca-Cola"></label>
     </fieldset>
 
     <fieldset><legend><b>03</b>When &amp; where</legend><div class="grid">
@@ -127,17 +127,17 @@ button:disabled{opacity:.6;cursor:default}
     </div></fieldset>
 
     <fieldset><legend><b>04</b>Deliverables</legend><div class="grid">
-      <label>Preferred selects / coverage<input maxlength="200" name="coverage" placeholder="e.g. 50 selects, or full coverage"></label>
+      <label>How many photos, or what coverage? <small>(optional)</small><input maxlength="200" name="coverage" placeholder="e.g. 50 selects, or full coverage"></label>
       <label>Deadline<input maxlength="200" name="deadline" placeholder="e.g. same night, 48 hours"></label>
-      <label class="full">Usage<input maxlength="200" name="usage" placeholder="e.g. social / web / marketing / internal"></label>
+      <label class="full">Where will the photos be used? <small>(optional)</small><input maxlength="200" name="usage" placeholder="e.g. social / web / marketing / internal"></label>
       <p class="hint full">Photos are delivered as a gallery link.</p>
       <label class="full">Extra keywords <small>(campaign names, hashtags)</small><input maxlength="200" name="keywords" placeholder="e.g. Rise Up, Salute to Service"></label>
     </div></fieldset>
 
     <fieldset><legend><b>05</b>Notes</legend>
-      <label>Shot List and Key Moments<textarea maxlength="2000" name="shotlist" placeholder="Specific moments, groups or setups you need"></textarea></label>
+      <label>Shot list and key moments<textarea maxlength="2000" name="shotlist" placeholder="Specific moments, groups or setups you need"></textarea></label>
       <label>Attach a PDF <small>(optional: schedule, roster, run of show, shot list)</small><input type="file" name="team_pdf" accept=".pdf,application/pdf"></label>
-      <label>Additional Comments<textarea maxlength="2000" name="notes" placeholder="Parking, credentials, dress code, timeline…"></textarea></label>
+      <label>Anything else?<textarea maxlength="2000" name="notes" placeholder="Parking, credentials, dress code, timeline…"></textarea></label>
     </fieldset>
 
     <div class="row"><button type="submit" id="send">Send request</button><span class="note" id="status"></span></div>
@@ -147,7 +147,7 @@ button:disabled{opacity:.6;cursor:default}
   <div id="doneView" hidden>
     <div class="done">
       <h2>Request sent</h2>
-      <p>Thanks. I'll confirm by email within a day.</p>
+      <p>Thanks. I'll confirm by email within one business day.</p>
       <p class="note" id="localNote" hidden><span id="localWhy">Testing on this computer: the request wasn't sent anywhere (that works once the site is on Netlify).</span> <a id="openBuilder" href="#">Open it in the builder →</a></p>
     </div>
   </div>
